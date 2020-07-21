@@ -42,7 +42,7 @@ public:
 
     void set_done(bool done);
     bool done() const { return d_done; }
-
+    
     void set_input(unsigned int which, buffer_reader_sptr reader);
     buffer_reader_sptr input(unsigned int which)
     {
