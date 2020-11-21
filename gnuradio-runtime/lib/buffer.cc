@@ -14,8 +14,8 @@
 #include "vmcircbuf.h"
 #include <gnuradio/buffer.h>
 #include <gnuradio/buffer_double_mapped.h>
-#include <gnuradio/buffer_single_mapped.h>
 #include <gnuradio/buffer_reader.h>
+#include <gnuradio/buffer_single_mapped.h>
 #include <gnuradio/buffer_type.h>
 #include <gnuradio/integer_math.h>
 #include <gnuradio/math.h>
@@ -56,8 +56,11 @@ static long s_buffer_count = 0; // counts for debugging storage mgmt
  ---------------------------------------------------------------------------- */
 
 
-buffer::buffer(BufferMappingType buf_type, int nitems, size_t sizeof_item, 
-               uint64_t downstream_lcm_nitems, block_sptr link)
+buffer::buffer(BufferMappingType buf_type,
+               int nitems,
+               size_t sizeof_item,
+               uint64_t downstream_lcm_nitems,
+               block_sptr link)
     : d_base(0),
       d_bufsize(0),
       d_buf_map_type(buf_type),
@@ -78,8 +81,10 @@ buffer::buffer(BufferMappingType buf_type, int nitems, size_t sizeof_item,
     s_buffer_count++;
 }
 
-buffer_sptr make_buffer(int nitems, size_t sizeof_item,
-                        uint64_t downstream_lcm_nitems, block_sptr link,
+buffer_sptr make_buffer(int nitems,
+                        size_t sizeof_item,
+                        uint64_t downstream_lcm_nitems,
+                        block_sptr link,
                         block_sptr buf_owner)
 {
 #ifdef BUFFER_DEBUG
@@ -89,33 +94,25 @@ buffer_sptr make_buffer(int nitems, size_t sizeof_item,
     gr::configure_default_loggers(logger, debug_logger, "make_buffer");
     std::ostringstream msg;
 #endif
-    
-    if (buf_owner->get_buffer_type() == buftype_DEFAULT_NON_CUSTOM::get())
-    {
+
+    if (buf_owner->get_buffer_type() == buftype_DEFAULT_NON_CUSTOM::get()) {
 #ifdef BUFFER_DEBUG
-        msg << "buffer_double_mapped nitems: " << nitems 
+        msg << "buffer_double_mapped nitems: " << nitems
             << " -- sizeof_item: " << sizeof_item;
         GR_LOG_DEBUG(logger, msg.str());
 #endif
-        
-        return buffer_sptr(new buffer_double_mapped(nitems, 
-                                                    sizeof_item, 
-                                                    downstream_lcm_nitems, 
-                                                    link));
-    }
-    else
-    {
+
+        return buffer_sptr(
+            new buffer_double_mapped(nitems, sizeof_item, downstream_lcm_nitems, link));
+    } else {
 #ifdef BUFFER_DEBUG
-        msg << "buffer_single_mapped nitems: " << nitems 
+        msg << "buffer_single_mapped nitems: " << nitems
             << " -- sizeof_item: " << sizeof_item;
         GR_LOG_DEBUG(logger, msg.str());
 #endif
-    
-        return buffer_sptr(new buffer_single_mapped(nitems, 
-                                                    sizeof_item, 
-                                                    downstream_lcm_nitems, 
-                                                    link,
-                                                    buf_owner));
+
+        return buffer_sptr(new buffer_single_mapped(
+            nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner));
     }
 }
 
@@ -130,21 +127,20 @@ void* buffer::write_pointer() { return &d_base[d_write_index * d_sizeof_item]; }
 void buffer::update_write_pointer(int nitems)
 {
     gr::thread::scoped_lock guard(*mutex());
-    
+
 #ifdef BUFFER_DEBUG
     // BUFFER DEBUG
     unsigned orig_wr_idx = d_write_index;
 #endif
-    
+
     d_write_index = index_add(d_write_index, nitems);
     d_abs_write_offset += nitems;
-    
+
 #ifdef BUFFER_DEBUG
     // BUFFER DEBUG
     std::ostringstream msg;
-    msg << "[" << this << "] update_write_pointer -- orig d_write_index: " 
-        << orig_wr_idx  << " -- nitems: " << nitems << " -- d_write_index: "
-        << d_write_index;
+    msg << "[" << this << "] update_write_pointer -- orig d_write_index: " << orig_wr_idx
+        << " -- nitems: " << nitems << " -- d_write_index: " << d_write_index;
     GR_LOG_DEBUG(d_logger, msg.str());
 #endif
 }

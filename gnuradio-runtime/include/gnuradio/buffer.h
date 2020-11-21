@@ -26,11 +26,7 @@ class vmcircbuf;
 class buffer_reader;
 class buffer_reader_sm;
 
-enum class BufferMappingType
-{
-    DoubleMapped,
-    SingleMapped
-};
+enum class BufferMappingType { DoubleMapped, SingleMapped };
 
 /*!
  * \brief Allocate a buffer that holds at least \p nitems of size \p sizeof_item.
@@ -60,14 +56,11 @@ public:
     gr::logger_ptr d_debug_logger;
 
     virtual ~buffer();
-    
+
     /*!
      * \brief return the buffer's mapping type
      */
-    BufferMappingType get_mapping_type()
-    {
-        return d_buf_map_type;
-    }
+    BufferMappingType get_mapping_type() { return d_buf_map_type; }
 
     /*!
      * \brief return number of items worth of space available for writing
@@ -104,7 +97,7 @@ public:
      * \brief Return the block that writes to this buffer.
      */
     block_sptr link() { return block_sptr(d_link); }
-    
+
     size_t nreaders() const { return d_readers.size(); }
     buffer_reader* reader(size_t index) { return d_readers[index]; }
 
@@ -112,22 +105,22 @@ public:
 
     uint64_t nitems_written() { return d_abs_write_offset; }
 
-    void reset_nitem_counter() 
-    { 
+    void reset_nitem_counter()
+    {
         d_write_index = 0;
-        d_abs_write_offset = 0; 
+        d_abs_write_offset = 0;
     }
 
     size_t get_sizeof_item() { return d_sizeof_item; }
-    
+
     uint64_t get_downstream_lcm_nitems() { return d_downstream_lcm_nitems; }
-    
+
     virtual void update_reader_block_history(unsigned history)
     {
         d_max_reader_history = std::max(d_max_reader_history, history);
         d_has_history = (d_max_reader_history > 1);
     }
-    
+
     /*!
      * \brief  Adds a new tag to the buffer.
      *
@@ -158,7 +151,7 @@ public:
 
     std::multimap<uint64_t, tag_t>::iterator get_tags_begin()
     {
-        return d_item_tags.begin(); 
+        return d_item_tags.begin();
     }
     std::multimap<uint64_t, tag_t>::iterator get_tags_end() { return d_item_tags.end(); }
     std::multimap<uint64_t, tag_t>::iterator get_tags_lower_bound(uint64_t x)
@@ -175,7 +168,7 @@ public:
 private:
     friend class buffer_reader;
     friend class buffer_reader_sm;
-    
+
     friend GR_RUNTIME_API buffer_sptr make_buffer(int nitems,
                                                   size_t sizeof_item,
                                                   uint64_t downstream_lcm_nitems,
@@ -192,11 +185,11 @@ protected:
 
     // Keep track of maximum sample delay of any reader; Only prune tags past this.
     unsigned d_max_reader_delay;
-    
+
     // Keep track of the maximum sample history requirements of all blocks that
     // consume from this buffer
     unsigned d_max_reader_history;
-    
+
     // Indicates if d_max_reader_history > 1
     bool d_has_history;
 
@@ -214,9 +207,7 @@ protected:
     bool d_done;
     std::multimap<uint64_t, tag_t> d_item_tags;
     uint64_t d_last_min_items_read;
-    
-    // TEMP; this is only used for buffer_single_mapped but needs to be here
-    // until buffer_reader is refactored
+
     uint64_t d_downstream_lcm_nitems;
     uint64_t d_write_multiple;
 
@@ -248,8 +239,11 @@ protected:
      * dependent boundary.  This is typically the system page size, but
      * under MS windows is 64KB.
      */
-    buffer(BufferMappingType buftype, int nitems, size_t sizeof_item, 
-           uint64_t downstream_lcm_nitems, block_sptr link);
+    buffer(BufferMappingType buftype,
+           int nitems,
+           size_t sizeof_item,
+           uint64_t downstream_lcm_nitems,
+           block_sptr link);
 
     /*!
      * \brief disassociate \p reader from this buffer

@@ -23,7 +23,7 @@ namespace gr {
 
 /*!
  * TODO: update this
- * 
+ *
  * \brief Single writer, multiple reader fifo.
  * \ingroup internal
  */
@@ -44,42 +44,39 @@ public:
      * \brief return number of items worth of space available for writing
      */
     virtual int space_available();
-    
+
     virtual void update_reader_block_history(unsigned history)
     {
         d_max_reader_history = std::max(d_max_reader_history, history);
-        if (d_max_reader_history > 1)
-        {
+        if (d_max_reader_history > 1) {
             d_write_index = d_max_reader_history - 1;
-            
+
+#ifdef BUFFER_DEBUG
             std::ostringstream msg;
-            msg << "[" << this << "] " 
-                << "buffer_single_mapped constructor -- set wr index to: " 
+            msg << "[" << this << "] "
+                << "buffer_single_mapped constructor -- set wr index to: "
                 << d_write_index;
             GR_LOG_DEBUG(d_logger, msg.str());
-            
+#endif
+
             d_has_history = true;
         }
     }
-    
+
     void deleter(char* ptr)
     {
-        std::cerr << "DELETER called" << std::endl;
-        
         // Delegate free of the underlying buffer to the block that owns it
         if (ptr != nullptr)
             buf_owner()->free_custom_buffer(ptr);
     }
-    
+
 protected:
-    
     /*!
      * sets d_base, d_bufsize.
      * returns true iff successful.
      */
-    bool allocate_buffer(int nitems, size_t sizeof_item, 
-                         uint64_t downstream_lcm_nitems);
-    
+    bool allocate_buffer(int nitems, size_t sizeof_item, uint64_t downstream_lcm_nitems);
+
     virtual unsigned index_add(unsigned a, unsigned b)
     {
         unsigned s = a + b;
@@ -102,21 +99,20 @@ protected:
         assert((unsigned)s < d_bufsize);
         return s;
     }
-    
+
 private:
-    
     friend class buffer_reader;
-    
+
     friend GR_RUNTIME_API buffer_sptr make_buffer(int nitems,
                                                   size_t sizeof_item,
                                                   uint64_t downstream_lcm_nitems,
                                                   block_sptr link,
                                                   block_sptr buf_owner);
-    
+
     std::weak_ptr<block> d_buf_owner; // block that owns this buffer
-    
+
     std::unique_ptr<char, std::function<void(char*)>> d_buffer;
-    
+
     /*!
      * \brief constructor is private.  Use gr_make_buffer to create instances.
      *
@@ -127,22 +123,21 @@ private:
      * \param downstream_lcm_nitems is the least common multiple of the items to
      *                              read by downstream blocks
      * \param link is the block that writes to this buffer.
-     * \param buf_owner if the block that owns the buffer which may or may not 
+     * \param buf_owner if the block that owns the buffer which may or may not
      *                  be the same as the block that writes to this buffer
-     * 
+     *
      * The total size of the buffer will be rounded up to a system
      * dependent boundary.  This is typically the system page size, but
      * under MS windows is 64KB.
      */
-    buffer_single_mapped(int nitems, size_t sizeof_item,
-                         uint64_t downstream_lcm_nitems, block_sptr link,
-                         block_sptr buf_owner);  
-
-}; 
+    buffer_single_mapped(int nitems,
+                         size_t sizeof_item,
+                         uint64_t downstream_lcm_nitems,
+                         block_sptr link,
+                         block_sptr buf_owner);
+};
 
 } /* namespace gr */
 
 
-
 #endif /* INCLUDED_GR_RUNTIME_BUFFER_SINGLE_MAPPED_H */
-    

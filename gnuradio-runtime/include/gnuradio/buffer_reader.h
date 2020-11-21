@@ -12,8 +12,8 @@
 #define INCLUDED_GR_RUNTIME_BUFFER_READER_H
 
 #include <gnuradio/api.h>
-#include <gnuradio/logger.h>
 #include <gnuradio/buffer.h>
+#include <gnuradio/logger.h>
 #include <gnuradio/runtime_types.h>
 #include <gnuradio/tags.h>
 #include <gnuradio/thread/thread.h>
@@ -53,7 +53,7 @@ public:
     gr::logger_ptr d_logger;
     gr::logger_ptr d_debug_logger;
 #endif
-    
+
     virtual ~buffer_reader();
 
     /*!
@@ -75,7 +75,7 @@ public:
     /*!
      * \brief Return number of items available for reading.
      */
-    virtual int items_available();  // const
+    virtual int items_available(); // const
 
     /*!
      * \brief Return buffer this reader reads from.
@@ -107,10 +107,10 @@ public:
 
     uint64_t nitems_read() const { return d_abs_read_offset; }
 
-    void reset_nitem_counter() 
-    { 
+    void reset_nitem_counter()
+    {
         d_read_index = 0;
-        d_abs_read_offset = 0; 
+        d_abs_read_offset = 0;
     }
 
     size_t get_sizeof_item() { return d_buffer->get_sizeof_item(); }
@@ -146,7 +146,7 @@ protected:
     friend class buffer;
     friend class buffer_double_mapped;
     friend class buffer_single_mapped;
-    
+
     friend GR_RUNTIME_API buffer_reader_sptr buffer_add_reader(buffer_sptr buf,
                                                                int nzero_preload,
                                                                block_sptr link,

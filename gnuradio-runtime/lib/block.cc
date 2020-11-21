@@ -379,7 +379,8 @@ void block::set_min_output_buffer(int port, long min_output_buffer)
         d_min_output_buffer[port] = min_output_buffer;
 }
 
-void block::allocate_detail(int ninputs, int noutputs, 
+void block::allocate_detail(int ninputs,
+                            int noutputs,
                             const std::vector<int>& downstream_max_nitems_vec,
                             const std::vector<uint64_t>& downstream_lcm_nitems_vec)
 {
@@ -390,8 +391,8 @@ void block::allocate_detail(int ninputs, int noutputs,
     for (int i = 0; i < noutputs; i++) {
         expand_minmax_buffer(i);
 
-        buffer_sptr buffer = allocate_buffer(i, downstream_max_nitems_vec[i], 
-                                             downstream_lcm_nitems_vec[i]);
+        buffer_sptr buffer = allocate_buffer(
+            i, downstream_max_nitems_vec[i], downstream_lcm_nitems_vec[i]);
         GR_LOG_DEBUG(d_debug_logger,
                      "Allocated buffer for output " + identifier() + " " +
                          std::to_string(i));
@@ -402,8 +403,7 @@ void block::allocate_detail(int ninputs, int noutputs,
             GR_LOG_WARN(d_logger,
                         boost::format("Block (%1%) max output buffer set to %2%"
                                       " instead of requested %3%") %
-                            alias() % buffer->bufsize() %
-                            max_output_buffer(i));
+                            alias() % buffer->bufsize() % max_output_buffer(i));
         set_max_output_buffer(i, buffer->bufsize());
     }
 
@@ -413,16 +413,16 @@ void block::allocate_detail(int ninputs, int noutputs,
 
 buffer_sptr block::replace_buffer(uint32_t out_port, block_sptr block_owner)
 {
-    block_detail_sptr detail_ = detail();    
+    block_detail_sptr detail_ = detail();
     buffer_sptr orig_buffer = detail_->output(out_port);
-    
+
     // Make a new buffer but this time use the passed in block as the owner
     buffer_sptr new_buffer = make_buffer(orig_buffer->bufsize(),
                                          orig_buffer->get_sizeof_item(),
                                          orig_buffer->get_downstream_lcm_nitems(),
                                          shared_from_base<block>(),
                                          block_owner);
-    
+
     detail_->set_output(out_port, new_buffer);
     return new_buffer;
 }
@@ -431,7 +431,8 @@ bool block::update_rate() const { return d_update_rate; }
 
 void block::enable_update_rate(bool en) { d_update_rate = en; }
 
-buffer_sptr block::allocate_buffer(int port, int downstream_max_nitems,
+buffer_sptr block::allocate_buffer(int port,
+                                   int downstream_max_nitems,
                                    uint64_t downstream_lcm_nitems)
 {
     int item_size = output_signature()->sizeof_stream_item(port);
@@ -461,38 +462,43 @@ buffer_sptr block::allocate_buffer(int port, int downstream_max_nitems,
             throw std::runtime_error("problems allocating a buffer with the given min "
                                      "output buffer constraint!");
     }
-    
+
     // If any downstream blocks are decimators and/or have a large output_multiple,
     // ensure we have a buffer at least twice their decimation factor*output_multiple
     nitems = std::max(nitems, downstream_max_nitems);
 
     // We're going to let this fail once and retry. If that fails, throw and exit.
     buffer_sptr buf;
-    
+
 #ifdef BUFFER_DEBUG
     // BUFFER DEBUG
     GR_LOG_DEBUG(d_logger,
                  "Block: " + name() + " allocated buffer for output " + identifier());
 #endif
-    
+
     try {
 #ifdef BUFFER_DEBUG
         // BUFFER DEBUG
         std::ostringstream msg;
         msg << "downstream_max_nitems: " << downstream_max_nitems
             << " -- downstream_lcm_nitems: " << downstream_lcm_nitems
-            << " -- output_multiple(): " << output_multiple()
-            << " -- nitems: " << nitems 
+            << " -- output_multiple(): " << output_multiple() << " -- nitems: " << nitems
             << " -- relative_rate: " << relative_rate()
             << " -- fixed_rate: " << fixed_rate();
         GR_LOG_DEBUG(d_logger, msg.str());
 #endif
-        buf = make_buffer(nitems, item_size, downstream_lcm_nitems, 
-                          shared_from_base<block>(), shared_from_base<block>());
-        
+        buf = make_buffer(nitems,
+                          item_size,
+                          downstream_lcm_nitems,
+                          shared_from_base<block>(),
+                          shared_from_base<block>());
+
     } catch (std::bad_alloc&) {
-        buf = make_buffer(nitems, item_size, downstream_lcm_nitems, 
-                          shared_from_base<block>(), shared_from_base<block>());
+        buf = make_buffer(nitems,
+                          item_size,
+                          downstream_lcm_nitems,
+                          shared_from_base<block>(),
+                          shared_from_base<block>());
     }
 
     // Set the max noutput items size here to make sure it's always

@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(buffer_reader.h)                                           */
-/* BINDTOOL_HEADER_FILE_HASH(c2e7c8e1df501e4e060c317c3ec7cefc)                     */
+/* BINDTOOL_HEADER_FILE_HASH(7db0a205e060491d2b44ec526ac9fae0)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -30,9 +30,9 @@ namespace py = pybind11;
 
 void bind_buffer_reader(py::module& m)
 {
-    
+
     using buffer_reader = ::gr::buffer_reader;
-    
+
     py::class_<buffer_reader, std::shared_ptr<buffer_reader>>(
         m, "buffer_reader", D(buffer_reader))
 
@@ -109,8 +109,8 @@ void bind_buffer_reader(py::module& m)
              D(buffer_reader, get_tags_in_range))
 
         ;
-        
-        
+
+
     m.def("buffer_add_reader",
           &::gr::buffer_add_reader,
           py::arg("buf"),
@@ -118,11 +118,9 @@ void bind_buffer_reader(py::module& m)
           py::arg("link") = gr::block_sptr(),
           py::arg("delay") = 0,
           D(buffer_add_reader));
-          
-          
+
 
     m.def("buffer_reader_ncurrently_allocated",
           &::gr::buffer_reader_ncurrently_allocated,
           D(buffer_reader_ncurrently_allocated));
-          
 }

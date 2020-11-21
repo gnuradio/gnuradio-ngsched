@@ -31,40 +31,37 @@ buffer_add_reader(buffer_sptr buf, int nzero_preload, block_sptr link, int delay
 {
     if (nzero_preload < 0)
         throw std::invalid_argument("buffer_add_reader: nzero_preload must be >= 0");
-    
+
     buffer_reader_sptr r;
-    
-    if (buf->get_mapping_type() == BufferMappingType::DoubleMapped)
-    {
-        r.reset(new buffer_reader(buf, buf->index_sub(buf->d_write_index, nzero_preload), 
-                                  link));
+
+    if (buf->get_mapping_type() == BufferMappingType::DoubleMapped) {
+        r.reset(new buffer_reader(
+            buf, buf->index_sub(buf->d_write_index, nzero_preload), link));
         r->declare_sample_delay(delay);
-    }
-    else if (buf->get_mapping_type() == BufferMappingType::SingleMapped)
-    {
-        r.reset(new buffer_reader_sm(buf, buf->index_sub(buf->d_write_index, nzero_preload), 
-                                     link));
+    } else if (buf->get_mapping_type() == BufferMappingType::SingleMapped) {
+        r.reset(new buffer_reader_sm(
+            buf, buf->index_sub(buf->d_write_index, nzero_preload), link));
         r->declare_sample_delay(delay);
         if (link->history() > delay) {
             // NOTE: this becomes "effective history"
             buf->update_reader_block_history(link->history() - delay);
-    //        buf->update_reader_block_history(link->history()); // EXPERIMENT
+            //        buf->update_reader_block_history(link->history()); // EXPERIMENT
             if (link->history() > 1) {
                 r->d_read_index = buf->index_sub(buf->d_write_index, nzero_preload);
             }
         }
-    }    
-    
+    }
+
     buf->d_readers.push_back(r.get());
 
 #ifdef BUFFER_DEBUG
     // BUFFER DEBUG
-    std::cerr << " [" << buf.get() << ";" << r.get() 
-              << "] buffer_add_reader() nzero_preload "  << nzero_preload 
+    std::cerr << " [" << buf.get() << ";" << r.get()
+              << "] buffer_add_reader() nzero_preload " << nzero_preload
               << " -- delay: " << delay << " -- history: " << link->history()
               << " -- RD_idx: " << r->d_read_index << std::endl;
 #endif
-    
+
     return r;
 }
 
@@ -78,7 +75,7 @@ buffer_reader::buffer_reader(buffer_sptr buffer, unsigned int read_index, block_
 #ifdef BUFFER_DEBUG
     gr::configure_default_loggers(d_logger, d_debug_logger, "buffer_reader");
 #endif
-    
+
     s_buffer_reader_count++;
 }
 
@@ -99,19 +96,20 @@ unsigned buffer_reader::sample_delay() const { return d_attr_delay; }
 int buffer_reader::items_available() // const
 {
     int available = d_buffer->index_sub(d_buffer->d_write_index, d_read_index);
-    
+
 #ifdef BUFFER_DEBUG
     // BUFFER DEBUG
     std::ostringstream msg;
     std::string equalLabel;
-    
-    msg << "[" << d_buffer << ";" << this << "] " << equalLabel << "items_available() WR_idx: " 
-        << d_buffer->d_write_index << " -- WR items: " << d_buffer->nitems_written()
-        << " -- RD_idx: " << d_read_index << " -- RD items: " << nitems_read() 
-        << " (-" << d_attr_delay << ") -- available: " << available;
+
+    msg << "[" << d_buffer << ";" << this << "] " << equalLabel
+        << "items_available() WR_idx: " << d_buffer->d_write_index
+        << " -- WR items: " << d_buffer->nitems_written()
+        << " -- RD_idx: " << d_read_index << " -- RD items: " << nitems_read() << " (-"
+        << d_attr_delay << ") -- available: " << available;
     GR_LOG_DEBUG(d_logger, msg.str());
 #endif
-    
+
     return available;
 }
 
@@ -123,21 +121,21 @@ const void* buffer_reader::read_pointer()
 void buffer_reader::update_read_pointer(int nitems)
 {
     gr::thread::scoped_lock guard(*mutex());
-    
+
 #ifdef BUFFER_DEBUG
     // BUFFER DEBUG
     unsigned orig_rd_idx = d_read_index;
 #endif
-    
+
     d_read_index = d_buffer->index_add(d_read_index, nitems);
     d_abs_read_offset += nitems;
-    
+
 #ifdef BUFFER_DEBUG
     // BUFFER DEBUG
     std::ostringstream msg;
-    msg << "[" << d_buffer << ";" << this << "] update_read_pointer -- orig d_read_index: " 
-        << orig_rd_idx  << " -- nitems: " << nitems << " -- d_read_index: "
-        << d_read_index;
+    msg << "[" << d_buffer << ";" << this
+        << "] update_read_pointer -- orig d_read_index: " << orig_rd_idx
+        << " -- nitems: " << nitems << " -- d_read_index: " << d_read_index;
     GR_LOG_DEBUG(d_buffer->d_logger, msg.str());
 #endif
 }

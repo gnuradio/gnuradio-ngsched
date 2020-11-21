@@ -128,12 +128,12 @@ protected:
 
     // Message passing interface
     pmt::pmt_t d_message_subscribers;
-    
+
     /*!
      * \brief This is meant to be called by derived classes (e.g. block) to get
-     * a shared pointer internally. This is needed because 
+     * a shared pointer internally. This is needed because
      * std::enable_shared_from_this doesn't seem to work with derived classes
-     * in an inheritance hierarchy. 
+     * in an inheritance hierarchy.
      */
     template <typename Derived>
     std::shared_ptr<Derived> shared_from_base()

@@ -37,30 +37,32 @@ static inline long minimum_buffer_items(long type_size, long page_size)
 }
 
 
-buffer_double_mapped::buffer_double_mapped(int nitems, size_t sizeof_item,
-                                           uint64_t downstream_lcm_nitems, 
+buffer_double_mapped::buffer_double_mapped(int nitems,
+                                           size_t sizeof_item,
+                                           uint64_t downstream_lcm_nitems,
                                            block_sptr link)
-    : buffer(BufferMappingType::DoubleMapped, nitems, sizeof_item, downstream_lcm_nitems, 
+    : buffer(BufferMappingType::DoubleMapped,
+             nitems,
+             sizeof_item,
+             downstream_lcm_nitems,
              link)
 {
     gr::configure_default_loggers(d_logger, d_debug_logger, "buffer_double_mapped");
     if (!allocate_buffer(nitems, sizeof_item))
         throw std::bad_alloc();
-    
+
 #ifdef BUFFER_DEBUG
     // BUFFER DEBUG
     {
         std::ostringstream msg;
-        msg << "[" << this << "] " 
+        msg << "[" << this << "] "
             << "buffer_double_mapped constructor -- history: " << link->history();
         GR_LOG_DEBUG(d_logger, msg.str());
     }
 #endif
 }
 
-buffer_double_mapped::~buffer_double_mapped()
-{
-}
+buffer_double_mapped::~buffer_double_mapped() {}
 
 /*!
  * sets d_vmcircbuf, d_base, d_bufsize.
@@ -112,7 +114,7 @@ int buffer_double_mapped::space_available()
         return d_bufsize - 1; // See comment below
 
     else {
-        
+
         // Find out the maximum amount of data available to our readers
         int most_data = d_readers[0]->items_available();
         uint64_t min_items_read = d_readers[0]->nitems_read();
@@ -125,13 +127,13 @@ int buffer_double_mapped::space_available()
             prune_tags(d_last_min_items_read);
             d_last_min_items_read = min_items_read;
         }
-        
+
 #ifdef BUFFER_DEBUG
         // BUFFER DEBUG
         std::ostringstream msg;
-        msg << "[" << this << "] " 
-            << "space_available() called  d_write_index: " << d_write_index 
-            << " -- space_available: "  << (d_bufsize - most_data - 1);
+        msg << "[" << this << "] "
+            << "space_available() called  d_write_index: " << d_write_index
+            << " -- space_available: " << (d_bufsize - most_data - 1);
         GR_LOG_DEBUG(d_logger, msg.str());
 #endif
 

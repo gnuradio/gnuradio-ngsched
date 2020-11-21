@@ -83,7 +83,7 @@ void flat_flowgraph::allocate_block_detail(basic_block_sptr block)
     // Determine the downstream max per output port
     std::vector<int> downstream_max_nitems(noutputs, 0);
     std::vector<uint64_t> downstream_lcm_nitems(noutputs, 1);
-    
+
 #ifdef BUFFER_DEBUG
     std::ostringstream msg;
     msg << "BLOCK: " << block->name();
@@ -92,65 +92,62 @@ void flat_flowgraph::allocate_block_detail(basic_block_sptr block)
     for (int i = 0; i < noutputs; i++) {
         int nitems = 0;
         uint64_t lcm_nitems = 1;
-        basic_block_vector_t downstream_blocks = calc_downstream_blocks(grblock, i);        
-        for (basic_block_viter_t blk = downstream_blocks.begin(); 
-             blk != downstream_blocks.end(); blk++) {
+        basic_block_vector_t downstream_blocks = calc_downstream_blocks(grblock, i);
+        for (basic_block_viter_t blk = downstream_blocks.begin();
+             blk != downstream_blocks.end();
+             blk++) {
             block_sptr dgrblock = cast_to_block_sptr(*blk);
             if (!dgrblock)
                 throw std::runtime_error("allocate_buffer found non-gr::block");
-            
+
 #ifdef BUFFER_DEBUG
             msg.str("");
             msg << "      DWNSTRM BLOCK: " << dgrblock->name();
             GR_LOG_DEBUG(d_logger, msg.str());
 #endif
-            
-            // If any downstream blocks are decimators and/or have a large 
-            // output_multiple, ensure we have a buffer at least twice their 
+
+            // If any downstream blocks are decimators and/or have a large
+            // output_multiple, ensure we have a buffer at least twice their
             // decimation factor*output_multiple
             double decimation = (1.0 / dgrblock->relative_rate());
             int multiple = dgrblock->output_multiple();
             int history = dgrblock->history();
             nitems =
                 std::max(nitems, static_cast<int>(2 * (decimation * multiple + history)));
-            
+
             // Calculate the LCM of downstream reader nitems
 #ifdef BUFFER_DEBUG
             msg.str("");
             msg << "        OUT MULTIPLE: " << multiple;
             GR_LOG_DEBUG(d_logger, msg.str());
 #endif
-            
+
             gr_vector_int ninput_items_required(1);
             dgrblock->forecast(multiple, ninput_items_required);
-            if (ninput_items_required[0] != 0)
-            {
+            if (ninput_items_required[0] != 0) {
 #ifdef BUFFER_DEBUG
                 msg.str("");
                 msg << "        NINPUT_ITEMS: " << ninput_items_required[0];
                 GR_LOG_DEBUG(d_logger, msg.str());
 #endif
                 lcm_nitems = GR_LCM(lcm_nitems, (uint64_t)ninput_items_required[0]);
-            }
-            else
-            {
+            } else {
                 lcm_nitems = GR_LCM(lcm_nitems, (uint64_t)multiple);
             }
-            
+
 #ifdef BUFFER_DEBUG
             msg.str("");
             msg << "        LCM NITEMS: " << lcm_nitems;
             GR_LOG_DEBUG(d_logger, msg.str());
 #endif
-            
         }
         downstream_max_nitems[i] = nitems;
         downstream_lcm_nitems[i] = lcm_nitems;
     }
 
     // Allocate the block detail and necessary buffers
-    grblock->allocate_detail(ninputs, noutputs, downstream_max_nitems,
-                             downstream_lcm_nitems);
+    grblock->allocate_detail(
+        ninputs, noutputs, downstream_max_nitems, downstream_lcm_nitems);
 }
 
 void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
@@ -173,37 +170,32 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
         block_sptr src_grblock = cast_to_block_sptr(src_block);
         if (!src_grblock)
             throw std::runtime_error("connect_block_inputs found non-gr::block");
-        
+
         buffer_sptr src_buffer;
         buffer_type_t src_buf_type = src_grblock->get_buffer_type();
         buffer_type_t dest_buf_type = grblock->get_buffer_type();
         if (dest_buf_type == buftype_DEFAULT_NON_CUSTOM::get() ||
-            dest_buf_type == src_buf_type) 
-        {
+            dest_buf_type == src_buf_type) {
             // The block is not using a custom buffer OR the block and the upstream
-            // block both use the same kind of custom buffer 
+            // block both use the same kind of custom buffer
             src_buffer = src_grblock->detail()->output(src_port);
-        }
-        else
-        {
+        } else {
             if (dest_buf_type != buftype_DEFAULT_NON_CUSTOM::get() &&
-                src_buf_type  == buftype_DEFAULT_NON_CUSTOM::get())
-            {
+                src_buf_type == buftype_DEFAULT_NON_CUSTOM::get()) {
                 // The block uses a custom buffer but the upstream block does not
                 // therefore the upstream block's buffer can be replaced with the
                 // type of buffer that the block needs
                 src_buffer = src_grblock->replace_buffer(src_port, grblock);
-            }
-            else
-            {
+            } else {
                 // Both the block and upstream block use incompatible buffer types
                 // which is not currently allowed
                 std::ostringstream msg;
-                msg << "Block: " << grblock->name() << " and upstream block: "
-                    << src_grblock->name() << " use incompatible custom buffer types";
+                msg << "Block: " << grblock->name()
+                    << " and upstream block: " << src_grblock->name()
+                    << " use incompatible custom buffer types";
             }
         }
-        
+
         GR_LOG_DEBUG(d_debug_logger,
                      "Setting input " + std::to_string(dst_port) + " from edge " +
                          (*e).identifier());
@@ -231,7 +223,7 @@ void flat_flowgraph::merge_connections(flat_flowgraph_sptr old_ffg)
         } else {
             GR_LOG_DEBUG(d_debug_logger,
                          "merge: reusing original detail for block " +
-                         block->identifier());
+                             block->identifier());
         }
     }
 

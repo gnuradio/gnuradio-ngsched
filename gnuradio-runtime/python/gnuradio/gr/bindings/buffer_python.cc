@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(buffer.h)                                                  */
-/* BINDTOOL_HEADER_FILE_HASH(bf0f967d00163ade910805be36f2217b)                     */
+/* BINDTOOL_HEADER_FILE_HASH(8ffb85ca2178ad0fd86fa38ec134ea0f)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -122,12 +122,12 @@ void bind_buffer(py::module& m)
         ;
 
 
-//    m.def("make_buffer",
-//          &::gr::make_buffer,
-//          py::arg("nitems"),
-//          py::arg("sizeof_item"),
-//          py::arg("link") = gr::block_sptr(),
-//          D(make_buffer));
+    //    m.def("make_buffer",
+    //          &::gr::make_buffer,
+    //          py::arg("nitems"),
+    //          py::arg("sizeof_item"),
+    //          py::arg("link") = gr::block_sptr(),
+    //          D(make_buffer));
 
 
     m.def("buffer_ncurrently_allocated",

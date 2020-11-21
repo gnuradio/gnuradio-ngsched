@@ -12,7 +12,6 @@
 #define INCLUDED_GR_RUNTIME_BUFFER_DOUBLE_MAPPED_H
 
 #include <gnuradio/api.h>
-#include <gnuradio/logger.h>
 #include <gnuradio/buffer.h>
 #include <gnuradio/logger.h>
 #include <gnuradio/runtime_types.h>
@@ -20,7 +19,7 @@
 namespace gr {
 
 class vmcircbuf;
-    
+
 /*!
  * \brief Single writer, multiple reader fifo.
  * \ingroup internal
@@ -32,20 +31,19 @@ public:
     gr::logger_ptr d_debug_logger;
 
     virtual ~buffer_double_mapped();
-    
+
     /*!
      * \brief return number of items worth of space available for writing
      */
     virtual int space_available();
-    
+
 protected:
-    
     /*!
      * sets d_vmcircbuf, d_base, d_bufsize.
      * returns true iff successful.
      */
     bool allocate_buffer(int nitems, size_t sizeof_item);
-    
+
     virtual unsigned index_add(unsigned a, unsigned b)
     {
         unsigned s = a + b;
@@ -67,19 +65,18 @@ protected:
         assert((unsigned)s < d_bufsize);
         return s;
     }
-    
+
 private:
-    
     friend class buffer_reader;
-    
+
     friend GR_RUNTIME_API buffer_sptr make_buffer(int nitems,
                                                   size_t sizeof_item,
                                                   uint64_t downstream_lcm_nitems,
                                                   block_sptr link,
                                                   block_sptr buf_owner);
-    
+
     std::unique_ptr<gr::vmcircbuf> d_vmcircbuf;
-    
+
     /*!
      * \brief constructor is private.  Use gr_make_buffer to create instances.
      *
@@ -95,14 +92,13 @@ private:
      * dependent boundary.  This is typically the system page size, but
      * under MS windows is 64KB.
      */
-    buffer_double_mapped(int nitems, size_t sizeof_item, 
-                         uint64_t downstream_lcm_nitems, block_sptr link);
-
-}; 
+    buffer_double_mapped(int nitems,
+                         size_t sizeof_item,
+                         uint64_t downstream_lcm_nitems,
+                         block_sptr link);
+};
 
 } /* namespace gr */
 
 
-
 #endif /* INCLUDED_GR_RUNTIME_BUFFER_DOUBLE_MAPPED_H */
-    

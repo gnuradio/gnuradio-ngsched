@@ -516,64 +516,59 @@ public:
      * \param min_output_buffer the requested minimum output size in items.
      */
     void set_min_output_buffer(int port, long min_output_buffer);
-    
+
     /*!
-     * \brief Allocate the block_detail and necessary output buffers for this 
+     * \brief Allocate the block_detail and necessary output buffers for this
      * block.
      */
-    void allocate_detail(int ninputs, int noutputs, 
+    void allocate_detail(int ninputs,
+                         int noutputs,
                          const std::vector<int>& downstream_max_nitems_vec,
                          const std::vector<uint64_t>& downstream_lcm_nitems_vec);
-    
+
     // --------------- Custom buffer-related functions -------------
-    
+
     /*!
      * \brief Replace the block's buffer with a new one owned by the block_owner
      * parameter
-     * 
-     * \details 
+     *
+     * \details
      * This function is used to replace the buffer on the specified output port
      * of the block with a new buffer that is "owned" by the specified block. This
      * function will only be called if a downstream block is using a custom buffer
      * that is incompatible with the default buffer type created by this block.
-     * 
+     *
      */
     buffer_sptr replace_buffer(uint32_t out_port, block_sptr block_owner);
 
     /*!
      * \brief Return the type of custom buffer used by the block
-     * 
-     * \details 
+     *
+     * \details
      * Blocks that wish to allocate custom buffers should override this function.
      */
-    virtual buffer_type_t get_buffer_type()
-    {
-        return buftype_DEFAULT_NON_CUSTOM::get();
-    }
-    
+    virtual buffer_type_t get_buffer_type() { return buftype_DEFAULT_NON_CUSTOM::get(); }
+
     /*!
      * \brief Allocate a custom buffer for the block
-     * 
-     * \details 
+     *
+     * \details
      * Blocks that wish to allocate custom buffers should override this function.
-     * 
+     *
      * \param size the size of the buffer to allocate in bytes
      */
-    virtual char* allocate_custom_buffer(size_t size)
-    {
-        return nullptr;
-    }
-    
+    virtual char* allocate_custom_buffer(size_t size) { return nullptr; }
+
     /*!
      * \brief Free a custom buffer previously allocated by allocate_custom_buffer()
-     * 
-     * \details 
+     *
+     * \details
      * Blocks that wish to allocate custom buffers should override this function.
-     * 
+     *
      * \param buffer a pointer to the buffer
      */
-    virtual void free_custom_buffer(char* buffer) { }
-    
+    virtual void free_custom_buffer(char* buffer) {}
+
 
     // --------------- Performance counter functions -------------
 
@@ -969,14 +964,14 @@ protected:
                             const pmt::pmt_t& key);
 
     void enable_update_rate(bool en);
-    
+
     /*!
-     * \brief Allocate a buffer for the given output port of this block. Note 
+     * \brief Allocate a buffer for the given output port of this block. Note
      * that the downstream max number of items must be passed in to this
      * function for consideration.
      */
-    buffer_sptr allocate_buffer(int port, int downstream_max_nitems,
-                                uint64_t downstream_lcm_nitems);
+    buffer_sptr
+    allocate_buffer(int port, int downstream_max_nitems, uint64_t downstream_lcm_nitems);
 
     std::vector<long> d_max_output_buffer;
     std::vector<long> d_min_output_buffer;
@@ -998,7 +993,7 @@ protected:
     /*! PMT Symbol of the system port, `pmt::mp("system")`
      */
     const pmt::pmt_t d_system_port;
-    
+
 public:
     block_detail_sptr detail() const { return d_detail; }
     void set_detail(block_detail_sptr detail) { d_detail = detail; }
