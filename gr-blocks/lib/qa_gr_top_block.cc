@@ -250,7 +250,7 @@ BOOST_AUTO_TEST_CASE(t10_reconfig_max_output_buffer)
 
     // Reconfigure with gr_head in the middle
     tb->lock();
-    
+
     gr::block_sptr nop = gr::blocks::nop::make(sizeof(int));
     nop->set_max_output_buffer(4000);
     tb->disconnect(src, 0, dst, 0);
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(t10_reconfig_max_output_buffer)
     tb->connect(head, 0, nop, 0);
     tb->connect(nop, 0, dst, 0);
     tb->unlock();
-    
+
     // Wait for flowgraph to end on its own
     tb->wait();
 }
