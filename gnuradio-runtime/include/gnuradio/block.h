@@ -547,7 +547,14 @@ public:
      * \details
      * Blocks that wish to allocate custom buffers should override this function.
      */
-    virtual buffer_type_t get_buffer_type() { return buftype_DEFAULT_NON_CUSTOM::get(); }
+    virtual buffer_type_t get_buffer_type()
+    {
+#if DEBUG_SINGLE_MAPPED
+        return buftype_CUSTOM_HOST::get();
+#else
+        return buftype_DEFAULT_NON_CUSTOM::get();
+#endif
+    }
 
     /*!
      * \brief Allocate a custom buffer for the block
@@ -557,7 +564,14 @@ public:
      *
      * \param size the size of the buffer to allocate in bytes
      */
-    virtual char* allocate_custom_buffer(size_t size) { return nullptr; }
+    virtual char* allocate_custom_buffer(size_t size)
+    {
+#if DEBUG_SINGLE_MAPPED
+        return new char[size]();
+#else
+        return nullptr;
+#endif
+    }
 
     /*!
      * \brief Free a custom buffer previously allocated by allocate_custom_buffer()
@@ -567,7 +581,12 @@ public:
      *
      * \param buffer a pointer to the buffer
      */
-    virtual void free_custom_buffer(char* buffer) {}
+    virtual void free_custom_buffer(char* buffer)
+    {
+#if DEBUG_SINGLE_MAPPED
+        delete[] buffer;
+#endif
+    }
 
 
     // --------------- Performance counter functions -------------

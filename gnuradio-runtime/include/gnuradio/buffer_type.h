@@ -80,6 +80,7 @@ typedef const buffer_type_base& buffer_type_t;
     };
 
 MAKE_CUSTOM_BUFFER_TYPE(DEFAULT_NON_CUSTOM);
+MAKE_CUSTOM_BUFFER_TYPE(CUSTOM_HOST); // used only for test purposes
 
 } // namespace gr
 

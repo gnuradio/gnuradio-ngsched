@@ -95,16 +95,13 @@ buffer_sptr make_buffer(int nitems,
     std::ostringstream msg;
 #endif
 
-    if (buf_owner->get_buffer_type() == buftype_DEFAULT_NON_CUSTOM::get()) {
-#ifdef BUFFER_DEBUG
-        msg << "buffer_double_mapped nitems: " << nitems
-            << " -- sizeof_item: " << sizeof_item;
-        GR_LOG_DEBUG(logger, msg.str());
+#if DEBUG_SINGLE_MAPPED
+    if (1) {
+#else
+    if (buf_owner->get_buffer_type() != buftype_DEFAULT_NON_CUSTOM::get()) {
 #endif
-
-        return buffer_sptr(
-            new buffer_double_mapped(nitems, sizeof_item, downstream_lcm_nitems, link));
-    } else {
+        // Buffer type is NOT the default non custom variety so allocate a
+        // buffer_single_mapped instance
 #ifdef BUFFER_DEBUG
         msg << "buffer_single_mapped nitems: " << nitems
             << " -- sizeof_item: " << sizeof_item;
@@ -113,6 +110,17 @@ buffer_sptr make_buffer(int nitems,
 
         return buffer_sptr(new buffer_single_mapped(
             nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner));
+
+    } else {
+        // Default to allocating a buffer_double_mapped instance
+#ifdef BUFFER_DEBUG
+        msg << "buffer_double_mapped nitems: " << nitems
+            << " -- sizeof_item: " << sizeof_item;
+        GR_LOG_DEBUG(logger, msg.str());
+#endif
+
+        return buffer_sptr(
+            new buffer_double_mapped(nitems, sizeof_item, downstream_lcm_nitems, link));
     }
 }
 
