@@ -86,7 +86,7 @@ void flat_flowgraph::allocate_block_detail(basic_block_sptr block)
 
 #ifdef BUFFER_DEBUG
     std::ostringstream msg;
-    msg << "BLOCK: " << block->name();
+    msg << "BLOCK: " << block->identifier();
     GR_LOG_DEBUG(d_logger, msg.str()); // could also be d_debug_logger
 #endif
     for (int i = 0; i < noutputs; i++) {
@@ -102,7 +102,7 @@ void flat_flowgraph::allocate_block_detail(basic_block_sptr block)
 
 #ifdef BUFFER_DEBUG
             msg.str("");
-            msg << "      DWNSTRM BLOCK: " << dgrblock->name();
+            msg << "      DWNSTRM BLOCK: " << dgrblock->identifier();
             GR_LOG_DEBUG(d_logger, msg.str());
 #endif
 
@@ -122,22 +122,36 @@ void flat_flowgraph::allocate_block_detail(basic_block_sptr block)
             GR_LOG_DEBUG(d_logger, msg.str());
 #endif
 
-            gr_vector_int ninput_items_required(1);
-            dgrblock->forecast(multiple, ninput_items_required);
-            if (ninput_items_required[0] != 0) {
-#ifdef BUFFER_DEBUG
-                msg.str("");
-                msg << "        NINPUT_ITEMS: " << ninput_items_required[0];
-                GR_LOG_DEBUG(d_logger, msg.str());
-#endif
-                lcm_nitems = GR_LCM(lcm_nitems, (uint64_t)ninput_items_required[0]);
-            } else {
-                lcm_nitems = GR_LCM(lcm_nitems, (uint64_t)multiple);
+            if (dgrblock->fixed_rate()) {
+                lcm_nitems = GR_LCM(lcm_nitems,
+                                    (uint64_t)(dgrblock->fixed_rate_noutput_to_ninput(1) -
+                                               (dgrblock->history() - 1)));
+            }
+            if (dgrblock->relative_rate() != 1.0) {
+                // Relative rate
+                lcm_nitems = GR_LCM(lcm_nitems, dgrblock->relative_rate_d());
+            }
+
+            // Sanity check, make sure lcm_nitems is at least 1
+            if (lcm_nitems < 1) {
+                lcm_nitems = 1;
             }
 
 #ifdef BUFFER_DEBUG
             msg.str("");
+            msg << "        NINPUT_ITEMS: " << nitems;
+            GR_LOG_DEBUG(d_logger, msg.str());
+
+            msg.str("");
             msg << "        LCM NITEMS: " << lcm_nitems;
+            GR_LOG_DEBUG(d_logger, msg.str());
+
+            msg.str("");
+            msg << "        HISTORY: " << dgrblock->history();
+            GR_LOG_DEBUG(d_logger, msg.str());
+
+            msg.str("");
+            msg << "        DELAY: " << dgrblock->sample_delay(0);
             GR_LOG_DEBUG(d_logger, msg.str());
 #endif
         }
@@ -190,8 +204,8 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
                 // Both the block and upstream block use incompatible buffer types
                 // which is not currently allowed
                 std::ostringstream msg;
-                msg << "Block: " << grblock->name()
-                    << " and upstream block: " << src_grblock->name()
+                msg << "Block: " << grblock->identifier()
+                    << " and upstream block: " << src_grblock->identifier()
                     << " use incompatible custom buffer types";
             }
         }

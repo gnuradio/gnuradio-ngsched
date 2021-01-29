@@ -45,10 +45,11 @@ public:
      */
     virtual int space_available();
 
-    virtual void update_reader_block_history(unsigned history)
+    virtual void update_reader_block_history(unsigned history, int delay)
     {
+        unsigned old_max = d_max_reader_history;
         d_max_reader_history = std::max(d_max_reader_history, history);
-        if (d_max_reader_history > 1) {
+        if (d_max_reader_history != old_max) {
             d_write_index = d_max_reader_history - 1;
 
 #ifdef BUFFER_DEBUG
@@ -59,7 +60,19 @@ public:
             GR_LOG_DEBUG(d_logger, msg.str());
 #endif
 
-            d_has_history = true;
+            // Reset the reader's read index if the buffer's write index has changed.
+            // Note that "history - 1" is the nzero_preload value passed to
+            // buffer_add_reader.
+            for (auto reader : d_readers) {
+                reader->d_read_index = d_write_index - (reader->link()->history() - 1);
+            }
+        }
+
+        // Only attempt to set has history flag if it is not already set
+        if (!d_has_history) {
+            // Blocks that set delay may set history to delay + 1 but this is
+            // not "real" history
+            d_has_history = ((history - 1) != delay);
         }
     }
 
@@ -69,6 +82,8 @@ public:
         if (ptr != nullptr)
             buf_owner()->free_custom_buffer(ptr);
     }
+
+    virtual bool output_blocked_callback(int output_multiple, int min_noutput_items);
 
 protected:
     /*!

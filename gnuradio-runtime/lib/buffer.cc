@@ -73,6 +73,8 @@ buffer::buffer(BufferMappingType buf_type,
       d_abs_write_offset(0),
       d_done(false),
       d_last_min_items_read(0),
+      d_callback_flag(false),
+      d_active_pointer_counter(0),
       d_downstream_lcm_nitems(downstream_lcm_nitems),
       d_write_multiple(0)
 {
@@ -228,6 +230,26 @@ void buffer::prune_tags(uint64_t max_time)
     }
 }
 
-long buffer_ncurrently_allocated() { return s_buffer_count; }
+void buffer::on_lock(gr::thread::scoped_lock& lock)
+{
+    // NOTE: the protecting mutex (scoped_lock) is held by the custom_lock object
+    
+    // Wait until no other callback is active and no pointers are active for
+    // the buffer. 
+    d_cv.wait(lock, [this]() {
+        return (d_callback_flag == false && d_active_pointer_counter == 0);
+    });
+    d_callback_flag = true;
+}
 
+void buffer::on_unlock()
+{
+    // NOTE: the protecting mutex (scoped_lock) is held by the custom_lock object
+    
+    // Mark the callback flag inactive and notify anyone waiting
+    d_callback_flag = false;
+    d_cv.notify_all();
+}
+
+long buffer_ncurrently_allocated() { return s_buffer_count; }
 } /* namespace gr */

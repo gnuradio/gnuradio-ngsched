@@ -70,13 +70,30 @@ bool buffer_single_mapped::allocate_buffer(int nitems,
     // the calls to space_available() and items_available() may return values that
     // are too small and the scheduler will get stuck.
     uint64_t write_granularity = 1;
-    uint64_t lcm_granularity = 1;
+
+    if (link()->fixed_rate()) {
+        // Fixed rate
+        int num_inputs =
+            link()->fixed_rate_noutput_to_ninput(1) - (link()->history() - 1);
+        write_granularity =
+            link()->fixed_rate_ninput_to_noutput(num_inputs + (link()->history() - 1));
+    }
 
     if (link()->relative_rate() != 1.0) {
+        // Some blocks say they have fixed rate but actually have a relative
+        // rate set (looking at you puncture_bb...) so make this a separate
+        // check.
+
+        // Relative rate
         write_granularity = link()->relative_rate_i();
     }
-    write_granularity =
-        GR_LCM(link()->relative_rate_i(), (uint64_t)link()->output_multiple());
+
+    // If the output multiple has been set explicitly then adjust the write
+    // granularity.
+    if (link()->output_multiple_set()) {
+        write_granularity =
+            GR_LCM(write_granularity, (uint64_t)link()->output_multiple());
+    }
 
 #ifdef BUFFER_DEBUG
     std::ostringstream msg;
@@ -84,21 +101,18 @@ bool buffer_single_mapped::allocate_buffer(int nitems,
     GR_LOG_DEBUG(d_logger, msg.str());
 #endif
 
-
-    // Determine the LCM of the write and read granularity then use it to adjust
-    // the size of the buffer so that it is a multiple of the LCM value
+    // Adjust size so output buffer size is a multiple of the write granularity
     if (write_granularity != 1 || downstream_lcm_nitems != 1) {
-        lcm_granularity = GR_LCM(write_granularity, downstream_lcm_nitems);
-
-        uint64_t remainder = nitems % lcm_granularity;
-        nitems += (remainder > 0) ? (lcm_granularity - remainder) : 0;
+        uint64_t size_align_adjust = GR_LCM(write_granularity, downstream_lcm_nitems);
+        uint64_t remainder = nitems % size_align_adjust;
+        nitems += (remainder > 0) ? (size_align_adjust - remainder) : 0;
 
 #ifdef BUFFER_DEBUG
         std::ostringstream msg;
-        msg << "allocate_buffer() called  nitems: " << orig_nitems
+        msg << "allocate_buffer()** called  nitems: " << orig_nitems
             << " -- read_multiple: " << downstream_lcm_nitems
             << " -- write_multiple: " << write_granularity
-            << " -- lcm_multiple: " << lcm_granularity << " -- NEW nitems: " << nitems;
+            << " -- NEW nitems: " << nitems;
         GR_LOG_DEBUG(d_logger, msg.str());
 #endif
     }
@@ -117,10 +131,74 @@ bool buffer_single_mapped::allocate_buffer(int nitems,
     return true;
 }
 
+bool buffer_single_mapped::output_blocked_callback(int output_multiple,
+                                                   int min_noutput_items)
+{
+    uint32_t space_avail = space_available();
+
+#ifdef BUFFER_DEBUG
+    std::ostringstream msg;
+    msg << "[" << this << "] "
+        << "output_blocked_callback()*** WR_idx: " << d_write_index
+        << " -- WR items: " << nitems_written()
+        << " -- output_multiple: " << output_multiple
+        << " -- min_noutput_items: " << min_noutput_items
+        << " -- space_avail: " << space_avail;
+    GR_LOG_DEBUG(d_logger, msg.str());
+#endif
+
+    if ((space_avail > 0) && ((space_avail / output_multiple) * output_multiple == 0)) {
+        // Find reader with the smallest read index
+        uint32_t min_read_idx = d_readers[0]->d_read_index;
+        for (size_t idx = 1; idx < d_readers.size(); ++idx) {
+            // Record index of reader with minimum read-index
+            if (d_readers[idx]->d_read_index < min_read_idx) {
+                min_read_idx = d_readers[idx]->d_read_index;
+            }
+        }
+
+#ifdef BUFFER_DEBUG
+        std::ostringstream msg;
+        msg << "[" << this << "] "
+            << "output_blocked_callback() WR_idx: " << d_write_index
+            << " -- WR items: " << nitems_written() << " -- min RD_idx: " << min_read_idx
+            << " -- min_noutput_items: " << min_noutput_items
+            << " -- shortcircuit: " << (min_read_idx < min_noutput_items)
+            << " -- to_move_items: " << (d_write_index - min_read_idx)
+            << " -- space_avail: " << space_avail;
+        GR_LOG_DEBUG(d_logger, msg.str());
+#endif
+
+        // Make sure we have enough room to start writing back at the beginning
+        if ((min_read_idx < output_multiple) || (min_read_idx >= d_write_index)) {
+            return false;
+        }
+
+        // Determine how much "to be read" data needs to be moved
+        int to_move_items = d_write_index - min_read_idx;
+        assert(to_move_items > 0);
+        uint32_t to_move_bytes = to_move_items * d_sizeof_item;
+
+        // Shift "to be read" data back to the beginning of the buffer
+        std::memmove(d_base, d_base + (min_read_idx * d_sizeof_item), to_move_bytes);
+
+        // Adjust write index and each reader index
+        d_write_index -= to_move_items;
+
+        for (size_t idx = 0; idx < d_readers.size(); ++idx) {
+            d_readers[idx]->d_read_index -= to_move_items;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 int buffer_single_mapped::space_available()
 {
     if (d_readers.empty())
-        return d_bufsize - 1; // See comment below
+        return d_bufsize;
 
     else {
 
@@ -134,6 +212,7 @@ int buffer_single_mapped::space_available()
                 min_read_index_idx = idx;
             }
 
+            // TODO: check if this can actually be different than above
             // Record index of reader with minimum nitems read
             if (d_readers[idx]->nitems_read() <
                 d_readers[min_items_read_idx]->d_read_index) {
@@ -143,62 +222,21 @@ int buffer_single_mapped::space_available()
         }
 
         buffer_reader* min_idx_reader = d_readers[min_items_read_idx];
-        unsigned min_read_index = d_readers[min_items_read_idx]->d_read_index;
+        unsigned min_read_index = d_readers[min_read_index_idx]->d_read_index;
 
         // For single mapped buffer there is no wrapping beyond the end of the
         // buffer
-        int thecase = -1; // REMOVE ME - just for debug
+        int thecase = 4; // REMOVE ME - just for debug
         int space = d_bufsize - d_write_index;
 
-        if (nitems_written() > 0 && d_has_history &&
-            (space < d_write_multiple || d_write_index == 0)) {
-            std::ostringstream msg;
-            if (min_read_index > (d_downstream_lcm_nitems - 1)) {
-                // Copy last max d_downstream_lcm_nitems - 1 samples back to the
-                // beginning of the buffer
-                size_t bytes_to_copy = (d_downstream_lcm_nitems - 1) * d_sizeof_item;
-                char* src_ptr = d_base;
-                if (d_write_index == 0) {
-                    src_ptr +=
-                        ((d_bufsize - (d_downstream_lcm_nitems - 1)) * d_sizeof_item);
-                } else {
-                    src_ptr += ((d_bufsize - (d_downstream_lcm_nitems - 1) - space) *
-                                d_sizeof_item);
-                }
-                std::memcpy(d_base, src_ptr, bytes_to_copy);
-
-                d_write_index = d_downstream_lcm_nitems - 1;
-                space = (min_read_index - (d_downstream_lcm_nitems - 1)) - d_write_index;
-
-#ifdef BUFFER_DEBUG
-                msg << "[" << this << "] "
-                    << " RELOCATING d_write_index: " << d_write_index
-                    << " -- min_read_index: " << min_read_index
-                    << " -- dstream_lcm_nitems: " << (d_downstream_lcm_nitems - 1)
-                    << " -- space: " << space;
-                GR_LOG_DEBUG(d_logger, msg.str());
-                thecase = 18;
-#endif
-            } else {
-                space = 0;
-
-#ifdef BUFFER_DEBUG
-                msg << "[" << this << "] "
-                    << " WAITING d_write_index: " << d_write_index
-                    << " -- min_read_index: " << min_read_index
-                    << " -- dstream_lcm_nitems: " << (d_downstream_lcm_nitems - 1)
-                    << " -- space: " << space;
-                GR_LOG_DEBUG(d_logger, msg.str());
-                thecase = 19;
-#endif
-            }
-        } else if (min_read_index == d_write_index) {
+        if (min_read_index == d_write_index) {
             thecase = 1;
 
             // If the (min) read index and write index are equal then the buffer
             // is either completely empty or completely full depending on if
             // the number of items read matches the number written
-            size_t offset = ((d_max_reader_history - 1) + min_idx_reader->sample_delay());
+            size_t offset = ((min_idx_reader->link()->history() - 1) +
+                             min_idx_reader->sample_delay());
             if ((min_idx_reader->nitems_read() - offset) != nitems_written()) {
                 thecase = 2;
                 space = 0;
@@ -206,6 +244,16 @@ int buffer_single_mapped::space_available()
         } else if (min_read_index > d_write_index) {
             thecase = 3;
             space = min_read_index - d_write_index;
+            // Leave extra space in case the reader gets stuck and needs realignment
+            {
+                if ((d_write_index > (d_bufsize / 2)) ||
+                    (min_read_index < (d_bufsize / 2))) {
+                    thecase = 17;
+                    space = 0;
+                } else {
+                    space = (d_bufsize / 2) - d_write_index;
+                }
+            }
         }
 
         if (min_items_read != d_last_min_items_read) {

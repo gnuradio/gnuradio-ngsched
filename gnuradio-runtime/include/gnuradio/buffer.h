@@ -12,6 +12,7 @@
 #define INCLUDED_GR_RUNTIME_BUFFER_H
 
 #include <gnuradio/api.h>
+#include <gnuradio/custom_lock.h>
 #include <gnuradio/logger.h>
 #include <gnuradio/runtime_types.h>
 #include <gnuradio/tags.h>
@@ -49,7 +50,7 @@ GR_RUNTIME_API buffer_sptr make_buffer(int nitems,
  * \brief Single writer, multiple reader fifo.
  * \ingroup internal
  */
-class GR_RUNTIME_API buffer
+class GR_RUNTIME_API buffer : public custom_lock_if
 {
 public:
     gr::logger_ptr d_logger;
@@ -115,7 +116,7 @@ public:
 
     uint64_t get_downstream_lcm_nitems() { return d_downstream_lcm_nitems; }
 
-    virtual void update_reader_block_history(unsigned history)
+    virtual void update_reader_block_history(unsigned history, int delay)
     {
         d_max_reader_history = std::max(d_max_reader_history, history);
         d_has_history = (d_max_reader_history > 1);
@@ -163,6 +164,48 @@ public:
         return d_item_tags.upper_bound(x);
     }
 
+    /*!
+     * Callback function that the scheduler will call when it determines that
+     * the output is blocked. Override this function if needed.
+     */
+    virtual bool output_blocked_callback(int output_multiple, int min_noutput_items)
+    {
+        return false;
+    }
+
+    /*!
+     * Increment the number of active pointers for this buffer.
+     */
+    inline void increment_active()
+    {
+        gr::thread::scoped_lock lock(d_mutex);
+
+        d_cv.wait(lock, [this]() { return d_callback_flag == false; });
+        ++d_active_pointer_counter;
+    }
+
+    /*!
+     * Decrement the number of active pointers for this buffer and signal anyone
+     * waiting when the count reaches zero.
+     */
+    inline void decrement_active()
+    {
+        gr::thread::scoped_lock lock(d_mutex);
+
+        if (--d_active_pointer_counter == 0)
+            d_cv.notify_all();
+    }
+
+    /*!
+     * "on_lock" function from the custom_lock_if.
+     */
+    void on_lock(gr::thread::scoped_lock& lock);
+
+    /*!
+     * "on_unlock" function from the custom_lock_if.
+     */
+    void on_unlock();
+
     // -------------------------------------------------------------------------
 
 private:
@@ -200,6 +243,7 @@ protected:
     //
     // The mutex protects d_write_index, d_abs_write_offset, d_done, d_item_tags
     // and the d_read_index's and d_abs_read_offset's in the buffer readers.
+    // Also d_callback_flag and d_active_pointer_counter.
     //
     gr::thread::mutex d_mutex;
     unsigned int d_write_index;  // in items [0,d_bufsize)
@@ -207,6 +251,10 @@ protected:
     bool d_done;
     std::multimap<uint64_t, tag_t> d_item_tags;
     uint64_t d_last_min_items_read;
+
+    gr::thread::condition_variable d_cv;
+    bool d_callback_flag;
+    uint32_t d_active_pointer_counter;
 
     uint64_t d_downstream_lcm_nitems;
     uint64_t d_write_multiple;

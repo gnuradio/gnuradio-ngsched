@@ -38,18 +38,15 @@ buffer_add_reader(buffer_sptr buf, int nzero_preload, block_sptr link, int delay
         r.reset(new buffer_reader(
             buf, buf->index_sub(buf->d_write_index, nzero_preload), link));
         r->declare_sample_delay(delay);
+        buf->update_reader_block_history(link->history(), delay);
     } else if (buf->get_mapping_type() == BufferMappingType::SingleMapped) {
         r.reset(new buffer_reader_sm(
             buf, buf->index_sub(buf->d_write_index, nzero_preload), link));
         r->declare_sample_delay(delay);
-        if (link->history() > delay) {
-            // NOTE: this becomes "effective history"
-            buf->update_reader_block_history(link->history() - delay);
-            //        buf->update_reader_block_history(link->history()); // EXPERIMENT
-            if (link->history() > 1) {
-                r->d_read_index = buf->index_sub(buf->d_write_index, nzero_preload);
-            }
-        }
+        
+        // Update reader block history
+        buf->update_reader_block_history(link->history(), delay);
+        r->d_read_index = buf->d_write_index - nzero_preload;
     }
 
     buf->d_readers.push_back(r.get());
@@ -100,9 +97,7 @@ int buffer_reader::items_available() // const
 #ifdef BUFFER_DEBUG
     // BUFFER DEBUG
     std::ostringstream msg;
-    std::string equalLabel;
-
-    msg << "[" << d_buffer << ";" << this << "] " << equalLabel
+    msg << "[" << d_buffer << ";" << this << "] " 
         << "items_available() WR_idx: " << d_buffer->d_write_index
         << " -- WR items: " << d_buffer->nitems_written()
         << " -- RD_idx: " << d_read_index << " -- RD items: " << nitems_read() << " (-"

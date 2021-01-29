@@ -482,9 +482,18 @@ buffer_sptr block::allocate_buffer(int port,
         std::ostringstream msg;
         msg << "downstream_max_nitems: " << downstream_max_nitems
             << " -- downstream_lcm_nitems: " << downstream_lcm_nitems
-            << " -- output_multiple(): " << output_multiple() << " -- nitems: " << nitems
-            << " -- relative_rate: " << relative_rate()
-            << " -- fixed_rate: " << fixed_rate();
+            << " -- output_multiple(): " << output_multiple()
+            << " -- out_mult_set: " << output_multiple_set() << " -- nitems: " << nitems
+            << " -- history: " << history() << " -- relative_rate: " << relative_rate();
+        if (relative_rate() != 1.0) {
+            msg << " (" << relative_rate_i() << " / " << relative_rate_d() << ")";
+        }
+        msg << " -- fixed_rate: " << fixed_rate();
+        if (fixed_rate()) {
+            int num_inputs = fixed_rate_noutput_to_ninput(1) - (history() - 1);
+            msg << " (" << num_inputs << " -> "
+                << fixed_rate_ninput_to_noutput(num_inputs + (history() - 1)) << ")";
+        }
         GR_LOG_DEBUG(d_logger, msg.str());
 #endif
         buf = make_buffer(nitems,

@@ -34,6 +34,8 @@ public:
      */
     virtual int items_available(); // const
 
+    virtual bool input_blocked_callback(int items_required, int items_avail);
+
 private:
     friend class buffer;
     friend class buffer_double_mapped;

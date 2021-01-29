@@ -23,6 +23,8 @@
 
 namespace gr {
 
+class buffer_reader_sm;
+
 /*!
  * \brief Create a new gr::buffer_reader and attach it to buffer \p buf
  * \param buf is the buffer the \p gr::buffer_reader reads from.
@@ -140,12 +142,22 @@ public:
                            uint64_t abs_end,
                            long id);
 
+    /*!
+     * Callback function that the scheduler will call when it determines that
+     * the input is blocked. Override this function if needed.
+     */
+    virtual bool input_blocked_callback(int items_required, int items_avail)
+    {
+        return false;
+    }
+
     // -------------------------------------------------------------------------
 
 protected:
     friend class buffer;
     friend class buffer_double_mapped;
     friend class buffer_single_mapped;
+    friend class buffer_reader_sm;
 
     friend GR_RUNTIME_API buffer_reader_sptr buffer_add_reader(buffer_sptr buf,
                                                                int nzero_preload,
