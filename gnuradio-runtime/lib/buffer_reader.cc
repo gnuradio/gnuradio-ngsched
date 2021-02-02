@@ -43,7 +43,7 @@ buffer_add_reader(buffer_sptr buf, int nzero_preload, block_sptr link, int delay
         r.reset(new buffer_reader_sm(
             buf, buf->index_sub(buf->d_write_index, nzero_preload), link));
         r->declare_sample_delay(delay);
-        
+
         // Update reader block history
         buf->update_reader_block_history(link->history(), delay);
         r->d_read_index = buf->d_write_index - nzero_preload;
@@ -97,7 +97,7 @@ int buffer_reader::items_available() // const
 #ifdef BUFFER_DEBUG
     // BUFFER DEBUG
     std::ostringstream msg;
-    msg << "[" << d_buffer << ";" << this << "] " 
+    msg << "[" << d_buffer << ";" << this << "] "
         << "items_available() WR_idx: " << d_buffer->d_write_index
         << " -- WR items: " << d_buffer->nitems_written()
         << " -- RD_idx: " << d_read_index << " -- RD items: " << nitems_read() << " (-"

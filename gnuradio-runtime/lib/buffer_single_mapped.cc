@@ -202,27 +202,19 @@ int buffer_single_mapped::space_available()
 
     else {
 
-        size_t min_read_index_idx = 0;
         size_t min_items_read_idx = 0;
         uint64_t min_items_read = d_readers[0]->nitems_read();
         for (size_t idx = 1; idx < d_readers.size(); ++idx) {
-            // Record index of reader with minimum read-index
-            if (d_readers[idx]->d_read_index <
-                d_readers[min_read_index_idx]->d_read_index) {
-                min_read_index_idx = idx;
-            }
-
-            // TODO: check if this can actually be different than above
             // Record index of reader with minimum nitems read
             if (d_readers[idx]->nitems_read() <
-                d_readers[min_items_read_idx]->d_read_index) {
+                d_readers[min_items_read_idx]->nitems_read()) {
                 min_items_read_idx = idx;
             }
             min_items_read = std::min(min_items_read, d_readers[idx]->nitems_read());
         }
 
         buffer_reader* min_idx_reader = d_readers[min_items_read_idx];
-        unsigned min_read_index = d_readers[min_read_index_idx]->d_read_index;
+        unsigned min_read_index = d_readers[min_items_read_idx]->d_read_index;
 
         // For single mapped buffer there is no wrapping beyond the end of the
         // buffer

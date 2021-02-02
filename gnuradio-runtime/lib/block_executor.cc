@@ -534,7 +534,7 @@ block_executor::state block_executor::run_one_iteration()
                 buffer_reader_sptr in_buf = d->input(i);
                 LOG(std::ostringstream msg;
                     msg << m << " (t: " << this << ") -- pre-callback";
-                    GR_LOG_INFO(d_logger, msg.str()));
+                    GR_LOG_DEBUG(d_debug_logger, msg.str()));
                 gr::custom_lock lock(std::ref(*in_buf->mutex()), in_buf->buffer());
                 if (in_buf->input_blocked_callback(d_ninput_items_required[i],
                                                    d_ninput_items[i])) {

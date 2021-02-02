@@ -233,9 +233,9 @@ void buffer::prune_tags(uint64_t max_time)
 void buffer::on_lock(gr::thread::scoped_lock& lock)
 {
     // NOTE: the protecting mutex (scoped_lock) is held by the custom_lock object
-    
+
     // Wait until no other callback is active and no pointers are active for
-    // the buffer. 
+    // the buffer, then mark the callback flag active.
     d_cv.wait(lock, [this]() {
         return (d_callback_flag == false && d_active_pointer_counter == 0);
     });
@@ -245,7 +245,7 @@ void buffer::on_lock(gr::thread::scoped_lock& lock)
 void buffer::on_unlock()
 {
     // NOTE: the protecting mutex (scoped_lock) is held by the custom_lock object
-    
+
     // Mark the callback flag inactive and notify anyone waiting
     d_callback_flag = false;
     d_cv.notify_all();

@@ -199,6 +199,11 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
                 // The block uses a custom buffer but the upstream block does not
                 // therefore the upstream block's buffer can be replaced with the
                 // type of buffer that the block needs
+                std::ostringstream msg;
+                msg << "Block: " << grblock->identifier()
+                    << "replacing upstream block: " << src_grblock->identifier()
+                    << " buffer with a custom buffer";
+                GR_LOG_DEBUG(d_debug_logger, msg.str());
                 src_buffer = src_grblock->replace_buffer(src_port, grblock);
             } else {
                 // Both the block and upstream block use incompatible buffer types
@@ -206,7 +211,11 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
                 std::ostringstream msg;
                 msg << "Block: " << grblock->identifier()
                     << " and upstream block: " << src_grblock->identifier()
-                    << " use incompatible custom buffer types";
+                    << " use incompatible custom buffer types (" << dest_buf_type.name()
+                    << " -- " << src_buf_type.name() << ")  --> "
+                    << (dest_buf_type == src_buf_type);
+                GR_LOG_ERROR(d_logger, msg.str());
+                throw std::runtime_error(msg.str());
             }
         }
 
