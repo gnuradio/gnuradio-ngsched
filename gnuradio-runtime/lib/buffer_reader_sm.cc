@@ -59,6 +59,10 @@ bool buffer_reader_sm::input_blocked_callback(int items_required, int items_avai
     // This would mean that *all* readers must be > (passed) the write index
     if (((d_buffer->d_bufsize - d_read_index) < (uint32_t)items_required) &&
         (d_buffer->d_write_index < d_read_index)) {
+
+        // Update items available before going farther as it could be stale
+        items_avail = items_available();
+
         // Find reader with the smallest read index that is greater than the
         // write index
         uint32_t min_reader_index = std::numeric_limits<uint32_t>::max();
