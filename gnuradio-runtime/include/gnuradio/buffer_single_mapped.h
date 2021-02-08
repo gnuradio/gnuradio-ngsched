@@ -83,7 +83,7 @@ public:
             buf_owner()->free_custom_buffer(ptr);
     }
 
-    virtual bool output_blocked_callback(int output_multiple, int min_noutput_items);
+    virtual bool output_blocked_callback(int output_multiple, bool force);
 
 protected:
     /*!

@@ -670,6 +670,21 @@ block_executor::state block_executor::run_one_iteration()
         }
         */
 
+        // The call to general_work() produced no output therefore the block may
+        // be "effectively output blocked". Call the output blocked callback
+        // just in case, it can do no harm.
+        for (int i = 0; i < d->noutputs(); i++) {
+            buffer_sptr out_buf = d->output(i);
+            LOG(std::ostringstream msg;
+                msg << m << " -- NO OUTPUT -- [" << i << "] -- OUTPUT BLOCKED";
+                GR_LOG_DEBUG(d_debug_logger, msg.str()););
+            gr::custom_lock lock(std::ref(*out_buf->mutex()), out_buf);
+            bool rc = out_buf->output_blocked_callback(m->output_multiple(), true);
+            LOG(std::ostringstream msg; msg << m << " -- NO OUTPUT -- [" << i
+                                            << "] -- OUTPUT BLOCKED CBACK: " << rc;
+                GR_LOG_DEBUG(d_debug_logger, msg.str()););
+        }
+
         // Have the caller try again...
         return READY_NO_OUTPUT;
     }

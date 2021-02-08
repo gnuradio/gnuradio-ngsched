@@ -131,8 +131,7 @@ bool buffer_single_mapped::allocate_buffer(int nitems,
     return true;
 }
 
-bool buffer_single_mapped::output_blocked_callback(int output_multiple,
-                                                   int min_noutput_items)
+bool buffer_single_mapped::output_blocked_callback(int output_multiple, bool force)
 {
     uint32_t space_avail = space_available();
 
@@ -142,12 +141,12 @@ bool buffer_single_mapped::output_blocked_callback(int output_multiple,
         << "output_blocked_callback()*** WR_idx: " << d_write_index
         << " -- WR items: " << nitems_written()
         << " -- output_multiple: " << output_multiple
-        << " -- min_noutput_items: " << min_noutput_items
-        << " -- space_avail: " << space_avail;
+        << " -- space_avail: " << space_avail << " -- force: " << force;
     GR_LOG_DEBUG(d_logger, msg.str());
 #endif
 
-    if ((space_avail > 0) && ((space_avail / output_multiple) * output_multiple == 0)) {
+    if (((space_avail > 0) && ((space_avail / output_multiple) * output_multiple == 0)) ||
+        force) {
         // Find reader with the smallest read index
         uint32_t min_read_idx = d_readers[0]->d_read_index;
         for (size_t idx = 1; idx < d_readers.size(); ++idx) {
@@ -162,15 +161,15 @@ bool buffer_single_mapped::output_blocked_callback(int output_multiple,
         msg << "[" << this << "] "
             << "output_blocked_callback() WR_idx: " << d_write_index
             << " -- WR items: " << nitems_written() << " -- min RD_idx: " << min_read_idx
-            << " -- min_noutput_items: " << min_noutput_items
-            << " -- shortcircuit: " << (min_read_idx < min_noutput_items)
+            << " -- shortcircuit: "
+            << ((min_read_idx == 0) || (min_read_idx >= d_write_index))
             << " -- to_move_items: " << (d_write_index - min_read_idx)
-            << " -- space_avail: " << space_avail;
+            << " -- space_avail: " << space_avail << " -- force: " << force;
         GR_LOG_DEBUG(d_logger, msg.str());
 #endif
 
         // Make sure we have enough room to start writing back at the beginning
-        if ((min_read_idx < output_multiple) || (min_read_idx >= d_write_index)) {
+        if ((min_read_idx == 0) || (min_read_idx >= d_write_index)) {
             return false;
         }
 
@@ -183,10 +182,10 @@ bool buffer_single_mapped::output_blocked_callback(int output_multiple,
         std::memmove(d_base, d_base + (min_read_idx * d_sizeof_item), to_move_bytes);
 
         // Adjust write index and each reader index
-        d_write_index -= to_move_items;
+        d_write_index -= min_read_idx;
 
         for (size_t idx = 0; idx < d_readers.size(); ++idx) {
-            d_readers[idx]->d_read_index -= to_move_items;
+            d_readers[idx]->d_read_index -= min_read_idx;
         }
 
         return true;

@@ -168,7 +168,7 @@ public:
      * Callback function that the scheduler will call when it determines that
      * the output is blocked. Override this function if needed.
      */
-    virtual bool output_blocked_callback(int output_multiple, int min_noutput_items)
+    virtual bool output_blocked_callback(int output_multiple, bool force = false)
     {
         return false;
     }
