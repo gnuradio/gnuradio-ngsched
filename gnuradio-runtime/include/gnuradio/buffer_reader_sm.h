@@ -34,6 +34,10 @@ public:
      */
     virtual int items_available(); // const
 
+    /*!
+     * \brief Return true if thread is ready to call input_blocked_callback, false otherwise
+     */
+    virtual bool input_blocked_ready(int items_required) const;
     virtual bool input_blocked_callback(int items_required, int items_avail);
 
 private:

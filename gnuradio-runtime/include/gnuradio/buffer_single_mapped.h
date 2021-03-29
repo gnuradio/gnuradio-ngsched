@@ -83,6 +83,11 @@ public:
             buf_owner()->free_custom_buffer(ptr);
     }
 
+    /*!
+     * \brief Return true if thread is ready to call the callback, false otherwise
+     */
+    // virtual bool output_blocked_ready(int output_multiple, bool force);
+    virtual bool output_blocked_ready(gr::thread::mutex& mut, int output_multiple, bool force);
     virtual bool output_blocked_callback(int output_multiple, bool force);
 
 protected:

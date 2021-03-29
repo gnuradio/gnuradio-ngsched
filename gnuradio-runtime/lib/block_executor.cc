@@ -25,10 +25,19 @@
 #include <iostream>
 #include <limits>
 
+// ---------------------------------------------------------------------------
+// added for debugging ... mlm ...
+// ---------------------------------------------------------------------------
+#include <chrono>
+using std::cout;
+using std::endl;
+using std::flush;
+#include "gnuradio/thread/thread.h"
+
 namespace gr {
 
 // must be defined to either 0 or 1
-#define ENABLE_LOGGING 1
+#define ENABLE_LOGGING 0
 
 #if (ENABLE_LOGGING)
 #define LOG(x) \
@@ -260,6 +269,10 @@ block_executor::~block_executor()
 
 block_executor::state block_executor::run_one_iteration()
 {
+    // mlm
+    // auto thread_id = static_cast<unsigned int>(gr::thread::get_current_thread_id());
+    // cout << "block_executor::run_one_iteration() for: " << thread_id << endl << flush;
+
     int noutput_items;
     int max_items_avail;
     int max_noutput_items;
@@ -299,27 +312,87 @@ block_executor::state block_executor::run_one_iteration()
             goto were_done;
 
         if (noutput_items == 0) { // we're output blocked
+            auto start = std::chrono::system_clock::now();
+
+            // cout << "**** cb1 output_blocked" << endl;
             //            LOG(GR_LOG_INFO(d_debug_logger, "BLKD_OUT"););
             LOG(std::ostringstream msg; msg << m << " -- BLKD_OUT";
                 GR_LOG_INFO(d_debug_logger, msg.str()););
 
-            // Call the output blocked callback which will tell us if it was
-            // able to unblock the output
             buffer_sptr out_buf = d->output(output_idx);
-            gr::custom_lock lock(std::ref(*out_buf->mutex()), out_buf);
-            if (!out_buf->output_blocked_callback(m->output_multiple(),
-                                                  m->min_noutput_items())) {
-                LOG(std::ostringstream msg;
-                    msg << m << " -- BLKD_OUT -- ([1] callback FAILED)";
-                    GR_LOG_INFO(d_debug_logger, msg.str()););
-                return BLKD_OUT;
-            } else {
-                LOG(std::ostringstream msg;
-                    msg << m << " -- BLKD_OUT -- ([1] try again idx: " << output_idx
+
+            // cout << "**** src buf: " << *out_buf << endl;
+            // bool output_blocked_ready = false;
+            // {
+            //     auto start = std::chrono::system_clock::now();
+            //
+            //     gr::thread::scoped_lock guard(*out_buf->mutex());
+            //     output_blocked_ready =
+            //         out_buf->output_blocked_ready(m->output_multiple(),
+            //                                       m->min_noutput_items());
+            //
+            //     auto end = std::chrono::system_clock::now();
+            //     auto diff = end - start;
+            //     auto t_ms = std::chrono::duration<double, std::milli>(diff).count();
+            //     // LOG(std::ostringstream msg;
+            //     //     msg << "**** cb1 ready block elap time: " << t_ms << " ms";
+            //     //     GR_LOG_DEBUG(d_debug_logger, msg.str()););
+            //     std::ostringstream msg;
+            //     msg << "**** cb1 ready block elap time: " << t_ms << " ms";
+            //     GR_LOG_DEBUG(d_debug_logger, msg.str());
+            //     cout << "**** cb1 ready block time: " << t_ms << endl;
+            // }
+            // ---------------------------------------------------------------
+            // ---------------------------------------------------------------
+
+            // static int counter_true = 0;
+            // static int counter_false = 0;
+            // bool output_blocked_ready = out_buf->output_blocked_ready(std::ref(*out_buf->mutex()),
+            // m->output_multiple(),
+            // m->min_noutput_items());
+            // if(output_blocked_ready) {
+            //     cout << "**** output_blocked_ready == true" << endl;
+            //     counter_true++;
+            //     abort();
+            // }
+            // else {
+            //     counter_false++;
+            // }
+            // cout << "**** cb1 output_blocked_ready true/false count: " << counter_true
+            //      << "/" << counter_false << endl;
+
+            // if (output_blocked_ready) {
+                // Call the output blocked callback which will tell us if it was
+                // able to unblock the output
+
+            // static int cb1_succeed = 0;
+            // static int cb1_failed  = 0;
+
+                gr::custom_lock lock(std::ref(*out_buf->mutex()), out_buf);
+                if (!out_buf->output_blocked_callback(m->output_multiple(),
+                                                      m->min_noutput_items())) {
+                    LOG(std::ostringstream msg;
+                        msg << m << " -- BLKD_OUT -- ([1] callback FAILED)";
+                        GR_LOG_INFO(d_debug_logger, msg.str()););
+                    // cb1_failed++;
+                    // cout << "**** cb1 succeed/failed count: " << cb1_succeed << "/" << cb1_failed
+                    //      << endl;
+                    return BLKD_OUT;
+                } else {
+                    LOG(std::ostringstream msg;
+                        msg << m << " -- BLKD_OUT -- ([1] try again idx: " << output_idx
                         << ")";
-                    GR_LOG_INFO(d_debug_logger, msg.str()););
-                goto out_try_again;
-            }
+                        GR_LOG_INFO(d_debug_logger, msg.str()););
+                    // cb1_succeed++;
+                    // cout << "**** cb1 succeed/failed count: " << cb1_succeed << "/" << cb1_failed
+                    //      << endl;
+                    goto out_try_again;
+                }
+                //}
+
+                // auto end = std::chrono::system_clock::now();
+                // auto diff = end - start;
+                // auto t_ms = std::chrono::duration<double, std::milli>(diff).count();
         }
 
         goto setup_call_to_work; // jump to common code
@@ -422,22 +495,62 @@ block_executor::state block_executor::run_one_iteration()
             LOG(std::ostringstream msg; msg << m << " -- BLKD_OUT";
                 GR_LOG_INFO(d_debug_logger, msg.str()));
 
-            // Call the output blocked callback which will tell us if it was
-            // able to unblock the output
             buffer_sptr out_buf = d->output(output_idx);
-            gr::custom_lock lock(std::ref(*out_buf->mutex()), out_buf);
-            if (!out_buf->output_blocked_callback(m->output_multiple(),
-                                                  m->min_noutput_items())) {
-                LOG(std::ostringstream msg;
-                    msg << m << " -- BLKD_OUT -- ([2] callback FAILED)";
-                    GR_LOG_INFO(d_debug_logger, msg.str()););
-                return BLKD_OUT;
-            } else {
-                LOG(std::ostringstream msg;
-                    msg << m << " -- BLKD_OUT -- ([2] try again idx: " << output_idx
+
+            // bool output_blocked_ready = false;
+            // {
+            //     auto start = std::chrono::system_clock::now();
+            //
+            //     gr::thread::scoped_lock guard(*out_buf->mutex());
+            //     output_blocked_ready =
+            //         out_buf->output_blocked_ready(m->output_multiple(),
+            //                                       m->min_noutput_items());
+            //
+            //     auto end = std::chrono::system_clock::now();
+            //     auto diff = end - start;
+            //     auto t_ms = std::chrono::duration<double, std::milli>(diff).count();
+            //     // LOG(std::ostringstream oss;
+            //     //     oss << "**** cb2 ready block elap time: " << t_ms << " ms";
+            //     //     GR_LOG_DEBUG(d_debug_logger, oss.str()););
+            //     std::ostringstream msg;
+            //     msg << "**** cb2 ready block elap time: " << t_ms << " ms";
+            //     GR_LOG_DEBUG(d_debug_logger, msg.str());
+            //     cout << "**** cb2 ready block time: " << t_ms << endl;
+            // }
+
+            bool output_blocked_ready = out_buf->output_blocked_ready(std::ref(*out_buf->mutex()),
+                                                                      m->output_multiple(),
+                                                                      m->min_noutput_items());
+            // static int cb2_succeed = 0;
+            // static int cb2_failed  = 0;
+
+            if (output_blocked_ready) {
+                // Call the output blocked callback which will tell us if it was
+                // able to unblock the output
+                gr::custom_lock lock(std::ref(*out_buf->mutex()), out_buf);
+                if (!out_buf->output_blocked_callback(m->output_multiple(),
+                                                      m->min_noutput_items())) {
+                    LOG(std::ostringstream msg;
+                        msg << m << " -- BLKD_OUT -- ([2] callback FAILED)";
+                        GR_LOG_INFO(d_debug_logger, msg.str()););
+
+                    // cb2_failed++;
+                    // cout << "**** cb2 succeed/failed count: " << cb2_succeed << "/" << cb2_failed
+                    //      << endl;
+
+                    return BLKD_OUT;
+                } else {
+                    LOG(std::ostringstream msg;
+                        msg << m << " -- BLKD_OUT -- ([2] try again idx: " << output_idx
                         << ")";
-                    GR_LOG_INFO(d_debug_logger, msg.str()););
-                goto out_try_again2;
+                        GR_LOG_INFO(d_debug_logger, msg.str()););
+
+                    // cb2_succeed++;
+                    // cout << "**** cb2 succeed/failed count: " << cb2_succeed << "/" << cb2_failed
+                    //      << endl;
+
+                    goto out_try_again2;
+                }
             }
         }
 
@@ -530,11 +643,34 @@ block_executor::state block_executor::run_one_iteration()
             LOG(std::ostringstream msg; msg << m << " -- BLKD_IN";
                 GR_LOG_INFO(d_debug_logger, msg.str()));
 
+            buffer_reader_sptr in_buf = d->input(i);
+            // cout << "**** in_buf: " << in_buf.get() << endl;
+
+            LOG(std::ostringstream msg;
+                msg << m << " (t: " << this << ") -- pre-callback";
+                GR_LOG_DEBUG(d_debug_logger, msg.str()));
+
+            bool input_blocked_ready = false;
             {
-                buffer_reader_sptr in_buf = d->input(i);
-                LOG(std::ostringstream msg;
-                    msg << m << " (t: " << this << ") -- pre-callback";
-                    GR_LOG_DEBUG(d_debug_logger, msg.str()));
+                // auto start = std::chrono::system_clock::now();
+
+                gr::thread::scoped_lock guard(*in_buf->mutex());
+                input_blocked_ready =
+                    in_buf->input_blocked_ready(d_ninput_items_required[i]);
+
+                // auto end = std::chrono::system_clock::now();
+                // auto diff = end - start;
+                // auto t_ms = std::chrono::duration <double, std::milli>(diff).count();
+                // LOG(std::ostringstream oss;
+                //     oss << "**** cb3 ready block elap time: " << t_ms << " ms";
+                //     GR_LOG_DEBUG(d_debug_logger, oss.str()););
+                // std::ostringstream msg;
+                // msg << "**** cb3 ready block elap time: " << t_ms << " ms";
+                // GR_LOG_DEBUG(d_debug_logger, msg.str());
+                // cout << "**** cb3 ready block time: " << t_ms << endl;
+            }
+
+            if (input_blocked_ready) {
                 gr::custom_lock lock(std::ref(*in_buf->mutex()), in_buf->buffer());
                 if (in_buf->input_blocked_callback(d_ninput_items_required[i],
                                                    d_ninput_items[i])) {
@@ -548,6 +684,7 @@ block_executor::state block_executor::run_one_iteration()
                 goto were_done;
 
             // Is it possible to ever fulfill this request?
+            { // resolve this mlm
             buffer_reader_sptr in_buf = d->input(i);
             if (d_ninput_items_required[i] > in_buf->max_possible_items_available()) {
                 // Nope, never going to happen...
@@ -561,6 +698,7 @@ block_executor::state block_executor::run_one_iteration()
                     << "  If this is a filter, consider reducing the number of taps.";
                 GR_LOG_ERROR(d_logger, msg.str());
                 goto were_done;
+            }
             }
 
             // If we were made unaligned in this round but return here without

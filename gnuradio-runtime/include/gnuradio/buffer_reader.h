@@ -143,6 +143,14 @@ public:
                            long id);
 
     /*!
+     * Returns true when the current thread is ready to call the callback, false otherwise
+     */
+    virtual bool input_blocked_ready(int items_required) const
+    {
+        return false;
+    }
+
+    /*!
      * Callback function that the scheduler will call when it determines that
      * the input is blocked. Override this function if needed.
      */
@@ -152,7 +160,8 @@ public:
     }
 
     // -------------------------------------------------------------------------
-
+    unsigned int get_read_index()      const {return d_read_index;}
+    uint64_t     get_abs_read_offset() const {return d_abs_read_offset;}
 protected:
     friend class buffer;
     friend class buffer_double_mapped;
@@ -164,11 +173,12 @@ protected:
                                                                block_sptr link,
                                                                int delay);
 
-    buffer_sptr d_buffer;
-    unsigned int d_read_index;   // in items [0,d->buffer.d_bufsize)
-    uint64_t d_abs_read_offset;  // num items seen since the start
-    std::weak_ptr<block> d_link; // block that reads via this buffer reader
-    unsigned d_attr_delay;       // sample delay attribute for tag propagation
+    buffer_sptr          d_buffer;
+    unsigned int         d_read_index;      // in items [0,d->buffer.d_bufsize) ** see NB
+    uint64_t             d_abs_read_offset; // num items seen since the start   ** see NB
+    std::weak_ptr<block> d_link;            // block that reads via this buffer reader
+    unsigned             d_attr_delay;      // sample delay attribute for tag propagation
+    // ** NB: buffer::d_mutex protects d_read_index and d_abs_read_offset
 
     //! constructor is private.  Use gr::buffer::add_reader to create instances
     buffer_reader(buffer_sptr buffer, unsigned int read_index, block_sptr link);

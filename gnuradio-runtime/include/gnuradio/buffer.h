@@ -20,6 +20,11 @@
 #include <boost/weak_ptr.hpp>
 #include <map>
 #include <memory>
+#include <iostream>
+using std::ostream;
+using std::endl;
+
+// #define BUFFER_DEBUG    0
 
 namespace gr {
 
@@ -165,6 +170,16 @@ public:
     }
 
     /*!
+     * Returns true if the current thread is ready to execute
+     * output_blocked_callback(), false otherwise.
+     */
+    // virtual bool output_blocked_ready(int output_multiple, bool force) const
+    virtual bool output_blocked_ready(gr::thread::mutex& mut, int output_multiple, bool force)
+    {
+        return false;
+    }
+
+    /*!
      * Callback function that the scheduler will call when it determines that
      * the output is blocked. Override this function if needed.
      */
@@ -206,6 +221,8 @@ public:
      */
     void on_unlock();
 
+    friend ostream& operator<<(ostream& os, const buffer& buf);
+
     // -------------------------------------------------------------------------
 
 private:
@@ -245,16 +262,16 @@ protected:
     // and the d_read_index's and d_abs_read_offset's in the buffer readers.
     // Also d_callback_flag and d_active_pointer_counter.
     //
-    gr::thread::mutex d_mutex;
-    unsigned int d_write_index;  // in items [0,d_bufsize)
-    uint64_t d_abs_write_offset; // num items written since the start
-    bool d_done;
+    gr::thread::mutex              d_mutex;
+    unsigned int                   d_write_index; // in items [0,d_bufsize)
+    uint64_t                       d_abs_write_offset; // num items written since the start
+    bool                           d_done;
     std::multimap<uint64_t, tag_t> d_item_tags;
-    uint64_t d_last_min_items_read;
-
+    uint64_t                       d_last_min_items_read;
+    //
     gr::thread::condition_variable d_cv;
-    bool d_callback_flag;
-    uint32_t d_active_pointer_counter;
+    bool                           d_callback_flag;
+    uint32_t                       d_active_pointer_counter;
 
     uint64_t d_downstream_lcm_nitems;
     uint64_t d_write_multiple;

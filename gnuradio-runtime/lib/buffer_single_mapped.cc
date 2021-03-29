@@ -131,6 +131,32 @@ bool buffer_single_mapped::allocate_buffer(int nitems,
     return true;
 }
 
+// bool buffer_single_mapped::output_blocked_ready(int output_multiple,
+//                                                 bool force)
+// {
+//     // add scoped_lock here
+//     // {
+//     // gr::thread::scoped_lock(mut);
+//     uint32_t space_avail = space_available();
+//     // }
+//     return (((space_avail > 0) && ((space_avail / output_multiple) * output_multiple == 0)) ||
+//             force);
+// }
+
+bool buffer_single_mapped::output_blocked_ready(gr::thread::mutex& mut,
+                                                int output_multiple,
+                                                bool force)
+{
+    uint32_t space_avail = 0;
+    {
+        gr::thread::scoped_lock(mut);
+        space_avail = space_available();
+    }
+    return (((space_avail > 0) && ((space_avail / output_multiple) * output_multiple == 0)) ||
+            force);
+}
+
+
 bool buffer_single_mapped::output_blocked_callback(int output_multiple, bool force)
 {
     uint32_t space_avail = space_available();

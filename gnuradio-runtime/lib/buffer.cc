@@ -252,4 +252,20 @@ void buffer::on_unlock()
 }
 
 long buffer_ncurrently_allocated() { return s_buffer_count; }
+
+ostream& operator<<(ostream& os, const buffer& buf)
+{
+    os << endl
+       << "  sz:    " << buf.d_bufsize << endl
+       << "  nrdrs: " << buf.d_readers.size()  << endl;
+    for(auto& rdr : buf.d_readers) {
+        os << "    rd_idx: "        << rdr->get_read_index() << endl
+           << "    abs_rd_offset: " << rdr->get_abs_read_offset() << endl
+           << endl;
+    }
+    return os;
+}
+
+//}
+
 } /* namespace gr */

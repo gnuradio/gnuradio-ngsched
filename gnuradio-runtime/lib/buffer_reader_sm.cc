@@ -53,6 +53,12 @@ int buffer_reader_sm::items_available()
     return available;
 }
 
+bool buffer_reader_sm::input_blocked_ready(int items_required) const
+{
+    return (((d_buffer->d_bufsize - d_read_index) < (uint32_t)items_required) &&
+            (d_buffer->d_write_index < d_read_index));
+}
+
 bool buffer_reader_sm::input_blocked_callback(int items_required, int items_avail)
 {
     // Maybe adjust read pointers from min read index?
