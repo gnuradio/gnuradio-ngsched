@@ -86,8 +86,12 @@ public:
     /*!
      * \brief Return true if thread is ready to call the callback, false otherwise
      */
-    // virtual bool output_blocked_ready(int output_multiple, bool force);
-    virtual bool output_blocked_ready(gr::thread::mutex& mut, int output_multiple, bool force);
+    virtual bool output_blkd_cb_ready(int output_multiple);
+
+    /*!
+     * \brief Callback function that the scheduler will call when it determines
+     * that the output is blocked
+     */
     virtual bool output_blocked_callback(int output_multiple, bool force);
 
 protected:

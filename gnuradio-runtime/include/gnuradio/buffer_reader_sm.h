@@ -35,9 +35,15 @@ public:
     virtual int items_available(); // const
 
     /*!
-     * \brief Return true if thread is ready to call input_blocked_callback, false otherwise
+     * \brief Return true if thread is ready to call input_blocked_callback,
+     * false otherwise
      */
-    virtual bool input_blocked_ready(int items_required) const;
+    virtual bool input_blkd_cb_ready(int items_required) const;
+
+    /*!
+     * \brief Callback function that the scheduler will call when it determines
+     * that the input is blocked
+     */
     virtual bool input_blocked_callback(int items_required, int items_avail);
 
 private:

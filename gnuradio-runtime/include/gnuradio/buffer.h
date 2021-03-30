@@ -18,13 +18,10 @@
 #include <gnuradio/tags.h>
 #include <gnuradio/thread/thread.h>
 #include <boost/weak_ptr.hpp>
+#include <iostream>
 #include <map>
 #include <memory>
-#include <iostream>
-using std::ostream;
-using std::endl;
 
-// #define BUFFER_DEBUG    0
 
 namespace gr {
 
@@ -170,18 +167,16 @@ public:
     }
 
     /*!
-     * Returns true if the current thread is ready to execute
-     * output_blocked_callback(), false otherwise.
+     * \brief Returns true if the current thread is ready to execute
+     * output_blocked_callback(), false otherwise. Note if the default
+     * output_blocked_callback is overridden this function should also be
+     * overridden.
      */
-    // virtual bool output_blocked_ready(int output_multiple, bool force) const
-    virtual bool output_blocked_ready(gr::thread::mutex& mut, int output_multiple, bool force)
-    {
-        return false;
-    }
+    virtual bool output_blkd_cb_ready(int output_multiple) { return false; }
 
     /*!
-     * Callback function that the scheduler will call when it determines that
-     * the output is blocked. Override this function if needed.
+     * \brief Callback function that the scheduler will call when it determines
+     * that the output is blocked. Override this function if needed.
      */
     virtual bool output_blocked_callback(int output_multiple, bool force = false)
     {
@@ -189,7 +184,7 @@ public:
     }
 
     /*!
-     * Increment the number of active pointers for this buffer.
+     * \brief Increment the number of active pointers for this buffer.
      */
     inline void increment_active()
     {
@@ -200,8 +195,8 @@ public:
     }
 
     /*!
-     * Decrement the number of active pointers for this buffer and signal anyone
-     * waiting when the count reaches zero.
+     * \brief Decrement the number of active pointers for this buffer and signal
+     * anyone waiting when the count reaches zero.
      */
     inline void decrement_active()
     {
@@ -212,16 +207,16 @@ public:
     }
 
     /*!
-     * "on_lock" function from the custom_lock_if.
+     * \brief "on_lock" function from the custom_lock_if.
      */
     void on_lock(gr::thread::scoped_lock& lock);
 
     /*!
-     * "on_unlock" function from the custom_lock_if.
+     * \brief "on_unlock" function from the custom_lock_if.
      */
     void on_unlock();
 
-    friend ostream& operator<<(ostream& os, const buffer& buf);
+    friend std::ostream& operator<<(std::ostream& os, const buffer& buf);
 
     // -------------------------------------------------------------------------
 
@@ -262,16 +257,16 @@ protected:
     // and the d_read_index's and d_abs_read_offset's in the buffer readers.
     // Also d_callback_flag and d_active_pointer_counter.
     //
-    gr::thread::mutex              d_mutex;
-    unsigned int                   d_write_index; // in items [0,d_bufsize)
-    uint64_t                       d_abs_write_offset; // num items written since the start
-    bool                           d_done;
+    gr::thread::mutex d_mutex;
+    unsigned int d_write_index;  // in items [0,d_bufsize)
+    uint64_t d_abs_write_offset; // num items written since the start
+    bool d_done;
     std::multimap<uint64_t, tag_t> d_item_tags;
-    uint64_t                       d_last_min_items_read;
+    uint64_t d_last_min_items_read;
     //
     gr::thread::condition_variable d_cv;
-    bool                           d_callback_flag;
-    uint32_t                       d_active_pointer_counter;
+    bool d_callback_flag;
+    uint32_t d_active_pointer_counter;
 
     uint64_t d_downstream_lcm_nitems;
     uint64_t d_write_multiple;
