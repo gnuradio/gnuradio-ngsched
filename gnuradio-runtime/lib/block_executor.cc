@@ -307,8 +307,7 @@ block_executor::state block_executor::run_one_iteration()
 
             if (out_buf->output_blkd_cb_ready(m->output_multiple())) {
                 gr::custom_lock lock(std::ref(*out_buf->mutex()), out_buf);
-                if (!out_buf->output_blocked_callback(m->output_multiple(),
-                                                      m->min_noutput_items())) {
+                if (!out_buf->output_blocked_callback(m->output_multiple())) {
                     LOG(std::ostringstream msg;
                         msg << m << " -- BLKD_OUT -- ([1] callback FAILED)";
                         GR_LOG_INFO(d_debug_logger, msg.str()););
@@ -431,8 +430,7 @@ block_executor::state block_executor::run_one_iteration()
                 // Call the output blocked callback which will tell us if it was
                 // able to unblock the output
                 gr::custom_lock lock(std::ref(*out_buf->mutex()), out_buf);
-                if (!out_buf->output_blocked_callback(m->output_multiple(),
-                                                      m->min_noutput_items())) {
+                if (!out_buf->output_blocked_callback(m->output_multiple())) {
                     LOG(std::ostringstream msg;
                         msg << m << " -- BLKD_OUT -- ([2] callback FAILED)";
                         GR_LOG_INFO(d_debug_logger, msg.str()););
