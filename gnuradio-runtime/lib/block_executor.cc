@@ -680,7 +680,7 @@ block_executor::state block_executor::run_one_iteration()
                 msg << m << " -- NO OUTPUT -- [" << i << "] -- OUTPUT BLOCKED";
                 GR_LOG_DEBUG(d_debug_logger, msg.str()););
             gr::custom_lock lock(std::ref(*out_buf->mutex()), out_buf);
-            bool rc = out_buf->output_blocked_callback(m->output_multiple(), true);
+            out_buf->output_blocked_callback(m->output_multiple(), true);
             LOG(std::ostringstream msg; msg << m << " -- NO OUTPUT -- [" << i
                                             << "] -- OUTPUT BLOCKED CBACK: " << rc;
                 GR_LOG_DEBUG(d_debug_logger, msg.str()););

@@ -16,6 +16,7 @@
 #include <gnuradio/buffer_single_mapped.h>
 #include <gnuradio/integer_math.h>
 #include <gnuradio/math.h>
+#include <gnuradio/thread/thread.h>
 #include <assert.h>
 #include <algorithm>
 #include <iostream>
@@ -62,7 +63,9 @@ bool buffer_single_mapped::allocate_buffer(int nitems,
                                            size_t sizeof_item,
                                            uint64_t downstream_lcm_nitems)
 {
+#ifdef BUFFER_DEBUG
     int orig_nitems = nitems;
+#endif
 
     // Unlike the double mapped buffer case that can easily wrap back onto itself
     // for both reads and writes the single mapped case needs to be aware of read
@@ -135,7 +138,7 @@ bool buffer_single_mapped::output_blkd_cb_ready(int output_multiple)
 {
     uint32_t space_avail = 0;
     {
-        gr::thread::scoped_lock(mutex());
+        gr::thread::scoped_lock(*this->mutex());
         space_avail = space_available();
     }
     return ((space_avail > 0) &&
@@ -229,11 +232,15 @@ int buffer_single_mapped::space_available()
 
         // For single mapped buffer there is no wrapping beyond the end of the
         // buffer
+#ifdef BUFFER_DEBUG
         int thecase = 4; // REMOVE ME - just for debug
+#endif
         int space = d_bufsize - d_write_index;
 
         if (min_read_index == d_write_index) {
+#ifdef BUFFER_DEBUG
             thecase = 1;
+#endif
 
             // If the (min) read index and write index are equal then the buffer
             // is either completely empty or completely full depending on if
@@ -241,17 +248,23 @@ int buffer_single_mapped::space_available()
             size_t offset = ((min_idx_reader->link()->history() - 1) +
                              min_idx_reader->sample_delay());
             if ((min_idx_reader->nitems_read() - offset) != nitems_written()) {
+#ifdef BUFFER_DEBUG
                 thecase = 2;
+#endif
                 space = 0;
             }
         } else if (min_read_index > d_write_index) {
+#ifdef BUFFER_DEBUG
             thecase = 3;
+#endif
             space = min_read_index - d_write_index;
             // Leave extra space in case the reader gets stuck and needs realignment
             {
                 if ((d_write_index > (d_bufsize / 2)) ||
                     (min_read_index < (d_bufsize / 2))) {
+#ifdef BUFFER_DEBUG
                     thecase = 17;
+#endif
                     space = 0;
                 } else {
                     space = (d_bufsize / 2) - d_write_index;

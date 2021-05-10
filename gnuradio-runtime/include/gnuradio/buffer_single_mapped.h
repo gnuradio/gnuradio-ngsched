@@ -72,7 +72,7 @@ public:
         if (!d_has_history) {
             // Blocks that set delay may set history to delay + 1 but this is
             // not "real" history
-            d_has_history = ((history - 1) != delay);
+            d_has_history = ((static_cast<int>(history) - 1) != delay);
         }
     }
 
