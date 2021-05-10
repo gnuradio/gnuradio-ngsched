@@ -14,7 +14,7 @@
 
 #include "timing_error_detector.h"
 #include <gnuradio/math.h>
-#include <boost/make_unique.hpp>
+#include <memory>
 #include <stdexcept>
 
 namespace gr {
@@ -27,23 +27,23 @@ timing_error_detector::make(enum ted_type type, constellation_sptr constellation
     case TED_NONE:
         return nullptr;
     case TED_MUELLER_AND_MULLER:
-        return boost::make_unique<ted_mueller_and_muller>(constellation);
+        return std::make_unique<ted_mueller_and_muller>(constellation);
     case TED_MOD_MUELLER_AND_MULLER:
-        return boost::make_unique<ted_mod_mueller_and_muller>(constellation);
+        return std::make_unique<ted_mod_mueller_and_muller>(constellation);
     case TED_ZERO_CROSSING:
-        return boost::make_unique<ted_zero_crossing>(constellation);
+        return std::make_unique<ted_zero_crossing>(constellation);
     case TED_GARDNER:
-        return boost::make_unique<ted_gardner>();
+        return std::make_unique<ted_gardner>();
     case TED_EARLY_LATE:
-        return boost::make_unique<ted_early_late>();
+        return std::make_unique<ted_early_late>();
     case TED_DANDREA_AND_MENGALI_GEN_MSK:
-        return boost::make_unique<ted_generalized_msk>();
+        return std::make_unique<ted_generalized_msk>();
     case TED_SIGNAL_TIMES_SLOPE_ML:
-        return boost::make_unique<ted_signal_times_slope_ml>();
+        return std::make_unique<ted_signal_times_slope_ml>();
     case TED_SIGNUM_TIMES_SLOPE_ML:
-        return boost::make_unique<ted_signum_times_slope_ml>();
+        return std::make_unique<ted_signum_times_slope_ml>();
     case TED_MENGALI_AND_DANDREA_GMSK:
-        return boost::make_unique<ted_gaussian_msk>();
+        return std::make_unique<ted_gaussian_msk>();
     }
     return nullptr;
 }
@@ -311,8 +311,8 @@ float ted_generalized_msk::compute_error_cf()
 {
     gr_complex u;
 
-    u = (d_input[0] * d_input[0] * conj(d_input[2] * d_input[2])) -
-        (d_input[1] * d_input[1] * conj(d_input[3] * d_input[3]));
+    u = (d_input[1] * d_input[1] * conj(d_input[5] * d_input[5])) -
+        (d_input[3] * d_input[3] * conj(d_input[7] * d_input[7]));
 
     return gr::branchless_clip(u.real(), 3.0f);
 }
@@ -321,8 +321,8 @@ float ted_generalized_msk::compute_error_ff()
 {
     float u;
 
-    u = (d_input[0].real() * d_input[0].real() * d_input[2].real() * d_input[2].real()) -
-        (d_input[1].real() * d_input[1].real() * d_input[3].real() * d_input[3].real());
+    u = (d_input[1].real() * d_input[1].real() * d_input[5].real() * d_input[5].real()) -
+        (d_input[3].real() * d_input[3].real() * d_input[7].real() * d_input[7].real());
 
     return gr::branchless_clip(u, 3.0f);
 }

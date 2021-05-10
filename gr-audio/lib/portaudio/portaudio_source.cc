@@ -21,9 +21,9 @@
 #include "portaudio_source.h"
 #include <gnuradio/io_signature.h>
 #include <gnuradio/prefs.h>
-#include <stdio.h>
-#include <string.h>
 #include <unistd.h>
+#include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 #ifdef _MSC_VER
@@ -110,7 +110,7 @@ int portaudio_source_callback(const void* inputBuffer,
 
     else { // overrun
         self->d_noverruns++;
-        ssize_t r = ::write(2, "aO", 2); // FIXME change to non-blocking call
+        auto r = ::write(2, "aO", 2); // FIXME change to non-blocking call
         if (r == -1) {
             gr::logger_ptr logger, debug_logger;
             gr::configure_default_loggers(

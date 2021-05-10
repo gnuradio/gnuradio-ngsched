@@ -12,10 +12,10 @@
 #define INCLUDED_PMT_H
 
 #include <pmt/api.h>
-#include <stdint.h>
 #include <boost/any.hpp>
 #include <boost/noncopyable.hpp>
 #include <complex>
+#include <cstdint>
 #include <iosfwd>
 #include <memory>
 #include <stdexcept>
@@ -80,7 +80,6 @@ public:
 
 /*!
  * \brief typedef for shared pointer (transparent reference counting).
- * See http://www.boost.org/libs/smart_ptr/smart_ptr.htm
  */
 typedef std::shared_ptr<pmt_base> pmt_t;
 

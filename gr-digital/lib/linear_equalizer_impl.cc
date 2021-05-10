@@ -16,7 +16,7 @@
 #include <gnuradio/io_signature.h>
 #include <gnuradio/misc.h>
 #include <volk/volk.h>
-#include <boost/smart_ptr/make_unique.hpp>
+#include <memory>
 #include <vector>
 
 #include "adaptive_algorithms.h"
@@ -55,7 +55,7 @@ linear_equalizer_impl::linear_equalizer_impl(unsigned num_taps,
                                              num_taps * sizeof(gr_complex),
                                              sizeof(unsigned short)),
                          sps),
-      filter::kernel::fir_filter_ccc(sps, vector<gr_complex>(num_taps, gr_complex(0, 0))),
+      filter::kernel::fir_filter_ccc(vector<gr_complex>(num_taps, gr_complex(0, 0))),
       d_num_taps(num_taps),
       d_sps(sps),
       d_alg(alg),
@@ -66,7 +66,7 @@ linear_equalizer_impl::linear_equalizer_impl(unsigned num_taps,
       d_updated(false),
       d_training_sample(0)
 {
-    if (training_start_tag == "" || training_sequence.empty()) {
+    if (training_start_tag.empty() || training_sequence.empty()) {
         d_training_state = equalizer_state_t::DD;
     } else {
         d_training_state = equalizer_state_t::IDLE;
@@ -114,7 +114,7 @@ int linear_equalizer_impl::equalize(const gr_complex* input_samples,
         samples = input_samples;
     } else {
         in_prepended_history =
-            boost::make_unique<std::vector<gr_complex>>(num_inputs + d_num_taps - 1);
+            std::make_unique<std::vector<gr_complex>>(num_inputs + d_num_taps - 1);
         std::copy(input_samples,
                   input_samples + num_inputs,
                   in_prepended_history->begin() + d_num_taps - 1);
@@ -134,7 +134,7 @@ int linear_equalizer_impl::equalize(const gr_complex* input_samples,
             state[i] = (unsigned short)d_training_state;
         }
 
-        if (training_start_samples.size() > 0 &&
+        if (!training_start_samples.empty() &&
             tag_index < training_start_samples.size()) {
             unsigned int tag_sample = training_start_samples[tag_index];
             if (tag_sample >= j && tag_sample < (j + decimation())) {

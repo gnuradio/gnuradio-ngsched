@@ -192,6 +192,8 @@ class Application(Gtk.Application):
                 Actions.TOGGLE_FLOW_GRAPH_VAR_EDITOR,
                 Actions.TOGGLE_FLOW_GRAPH_VAR_EDITOR_SIDEBAR,
                 Actions.TOGGLE_HIDE_VARIABLES,
+                Actions.TOGGLE_SHOW_PARAMETER_EXPRESSION,
+                Actions.TOGGLE_SHOW_PARAMETER_EVALUATION,
                 Actions.TOGGLE_SHOW_BLOCK_IDS,
             ):
                 action.set_enabled(True)
@@ -490,6 +492,14 @@ class Application(Gtk.Application):
             action.save_to_preferences()
             for page in main.get_pages():
                 flow_graph_update(page.flow_graph)
+        elif action == Actions.TOGGLE_SHOW_PARAMETER_EXPRESSION:
+            action.set_active(not action.get_active())
+            action.save_to_preferences()
+            flow_graph_update()
+        elif action == Actions.TOGGLE_SHOW_PARAMETER_EVALUATION:
+            action.set_active(not action.get_active())
+            action.save_to_preferences()
+            flow_graph_update()
         elif action == Actions.TOGGLE_HIDE_VARIABLES:
             action.set_active(not action.get_active())
             active = action.get_active()
@@ -544,11 +554,8 @@ class Application(Gtk.Application):
                     response = self.dialog.run()
                     if response in (Gtk.ResponseType.APPLY, Gtk.ResponseType.ACCEPT):
                         page.state_cache.save_new_state(flow_graph.export_data())
-                        ### Following  lines force an complete update of io ports
-                        n = page.state_cache.get_current_state()
-                        flow_graph.import_data(n)
+                        ### Following  line forces a complete update of io ports
                         flow_graph_update()
-
                         page.saved = False
                     else:  # restore the current state
                         n = page.state_cache.get_current_state()
@@ -614,7 +621,7 @@ class Application(Gtk.Application):
                     main.new_page(file_path, show=(i == 0))
                     self.config.add_recent_file(file_path)
                     main.tool_bar.refresh_submenus()
-                    #main.menu_bar.refresh_submenus()
+                    main.menu.refresh_submenus()
         elif action == Actions.FLOW_GRAPH_OPEN_QSS_THEME:
             file_paths = FileDialogs.OpenQSS(main, self.platform.config.install_prefix +
                                              '/share/gnuradio/themes/').run()
@@ -625,7 +632,9 @@ class Application(Gtk.Application):
         elif action == Actions.FLOW_GRAPH_OPEN_RECENT:
             file_path = str(args[0])[1:-1]
             main.new_page(file_path, show=True)
+            self.config.add_recent_file(file_path)
             main.tool_bar.refresh_submenus()
+            main.menu.refresh_submenus()
         elif action == Actions.FLOW_GRAPH_SAVE:
             #read-only or undefined file path, do save-as
             if page.get_read_only() or not page.file_path:
@@ -658,8 +667,7 @@ class Application(Gtk.Application):
                     page.saved = False
                 self.config.add_recent_file(file_path)
                 main.tool_bar.refresh_submenus()
-                #TODO
-                #main.menu_bar.refresh_submenus()
+                main.menu.refresh_submenus()
         elif action == Actions.FLOW_GRAPH_SAVE_COPY:
             try:
                 if not page.file_path:
@@ -725,6 +733,8 @@ class Application(Gtk.Application):
                             Dialogs.show_missing_xterm(main, xterm)
                         self.config.xterm_missing(xterm)
                     if page.saved and page.file_path:
+                        # Save config before execution
+                        self.config.save()
                         Executor.ExecFlowGraphThread(
                             flow_graph_page=page,
                             xterm_executable=xterm,

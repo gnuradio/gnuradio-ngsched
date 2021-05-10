@@ -16,14 +16,9 @@
 #include <gnuradio/block_detail.h>
 #include <gnuradio/custom_lock.h>
 #include <gnuradio/prefs.h>
-#include <assert.h>
 #include <block_executor.h>
-#include <stdio.h>
-#include <boost/format.hpp>
-#include <boost/make_unique.hpp>
-#include <boost/thread.hpp>
-#include <iostream>
 #include <limits>
+#include <sstream>
 
 
 namespace gr {
@@ -276,7 +271,7 @@ block_executor::state block_executor::run_one_iteration()
     max_noutput_items = round_down(d_max_noutput_items, m->output_multiple());
 
     if (d->done()) {
-        assert(0);
+        GR_LOG_ERROR(d_logger, "unexpected done() in run_one_iteration");
         return DONE;
     }
 
@@ -694,7 +689,7 @@ block_executor::state block_executor::run_one_iteration()
         // Have the caller try again...
         return READY_NO_OUTPUT;
     }
-    assert(0);
+    GR_LOG_ERROR(d_logger, "invalid state while going through iteration state machine");
 
 were_done:
     //    LOG(GR_LOG_INFO(d_debug_logger, "we're done"););

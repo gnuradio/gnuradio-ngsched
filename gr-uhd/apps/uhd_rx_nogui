@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2006,2007,2011,2012,2019 Free Software Foundation, Inc.
+# Copyright 2006,2007,2011,2012,2019,2020 Free Software Foundation, Inc.
 #
 # This file is part of GNU Radio
 #
@@ -51,7 +51,7 @@ blocks.
 import math
 import sys
 from argparse import ArgumentParser
-from gnuradio import gr, gru, uhd, audio
+from gnuradio import gr, uhd, audio
 from gnuradio import filter
 from gnuradio import analog
 from gnuradio import eng_notation, eng_arg
@@ -191,7 +191,7 @@ class app_top_block(gr.top_block):
         if self.options.show_async_msg:
             self.async_msgq = gr.msg_queue(0)
             self.async_src = uhd.amsg_source("", self.async_msgq)
-            self.async_rcv = gru.msgq_runner(self.async_msgq, self.async_callback)
+            self.async_rcv = uhd.msgq_runner(self.async_msgq, self.async_callback)
 
     def async_callback(self, msg):
         """ Callback for processing async messages """

@@ -32,15 +32,14 @@ static int my_fftw_read_char(void* f) { return fgetc((FILE*)f); }
 #define O_NONBLOCK 0
 #endif //_WIN32
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
 #include <stdexcept>
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace gr {
 namespace fft {

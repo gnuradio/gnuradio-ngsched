@@ -10,10 +10,12 @@
 
 #include "gr_uhd_common.h"
 #include "usrp_source_impl.h"
+#include <gnuradio/prefs.h>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/thread.hpp>
-#include <iostream>
+#include <chrono>
+#include <mutex>
 #include <stdexcept>
 
 namespace gr {
@@ -37,7 +39,10 @@ usrp_source_impl::usrp_source_impl(const ::uhd::device_addr_t& device_addr,
       _recv_timeout(0.1), // seconds
       _recv_one_packet(true),
       _tag_now(false),
-      _issue_stream_cmd_on_start(issue_stream_cmd_on_start)
+      _issue_stream_cmd_on_start(issue_stream_cmd_on_start),
+      _last_log(std::chrono::steady_clock::now()),
+      _overflow_log_interval(
+          gr::prefs::singleton()->get_long("uhd", "logging_interval_ms", 750))
 {
     std::stringstream str;
     str << name() << unique_id();
@@ -46,7 +51,9 @@ usrp_source_impl::usrp_source_impl(const ::uhd::device_addr_t& device_addr,
     _samp_rate = this->get_samp_rate();
     _samps_per_packet = 1;
     register_msg_cmd_handler(cmd_tag_key(),
-                             boost::bind(&usrp_source_impl::_cmd_handler_tag, this, _1));
+                             [this](const pmt::pmt_t& tag, const int, const pmt::pmt_t&) {
+                                 this->_cmd_handler_tag(tag);
+                             });
 }
 
 usrp_source_impl::~usrp_source_impl() {}
@@ -74,6 +81,13 @@ void usrp_source_impl::set_samp_rate(double rate)
     }
     _samp_rate = this->get_samp_rate();
     _tag_now = true;
+    auto is_should_ratio = _samp_rate / rate;
+    if (is_should_ratio < 0.99 || is_should_ratio > 1.01) {
+        GR_LOG_WARN(
+            d_logger,
+            boost::format("Requested sample rate %g Hz not set; instead, %g Hz used.") %
+                rate % _samp_rate);
+    }
 }
 
 double usrp_source_impl::get_samp_rate(void)
@@ -98,12 +112,13 @@ usrp_source_impl::set_center_freq(const ::uhd::tune_request_t tune_request, size
 ::uhd::tune_result_t
 usrp_source_impl::_set_center_freq_from_internals(size_t chan, pmt::pmt_t direction)
 {
-    _chans_to_tune.reset(chan);
-    if (pmt::eqv(direction, ant_direction_tx())) {
+    if (pmt::eqv(direction, direction_tx())) {
         // TODO: what happens if the TX device is not instantiated? Catch error?
-        return _dev->set_tx_freq(_curr_tune_req[chan], _stream_args.channels[chan]);
+        _tx_chans_to_tune.reset(chan);
+        return _dev->set_tx_freq(_curr_tx_tune_req[chan], _stream_args.channels[chan]);
     } else {
-        return _dev->set_rx_freq(_curr_tune_req[chan], _stream_args.channels[chan]);
+        _rx_chans_to_tune.reset(chan);
+        return _dev->set_rx_freq(_curr_rx_tune_req[chan], _stream_args.channels[chan]);
     }
 }
 
@@ -119,10 +134,14 @@ double usrp_source_impl::get_center_freq(size_t chan)
     return _dev->get_rx_freq_range(chan);
 }
 
-void usrp_source_impl::set_gain(double gain, size_t chan)
+void usrp_source_impl::set_gain(double gain, size_t chan, pmt::pmt_t direction)
 {
     chan = _stream_args.channels[chan];
-    return _dev->set_rx_gain(gain, chan);
+    if (pmt::eqv(direction, direction_tx())) {
+        return _dev->set_tx_gain(gain, chan);
+    } else {
+        return _dev->set_rx_gain(gain, chan);
+    }
 }
 
 void usrp_source_impl::set_gain(double gain, const std::string& name, size_t chan)
@@ -133,27 +152,13 @@ void usrp_source_impl::set_gain(double gain, const std::string& name, size_t cha
 
 void usrp_source_impl::set_rx_agc(const bool enable, size_t chan)
 {
-#if UHD_VERSION >= 30803
     chan = _stream_args.channels[chan];
     return _dev->set_rx_agc(enable, chan);
-#else
-    throw std::runtime_error("not implemented in this version");
-#endif
 }
 
 void usrp_source_impl::set_normalized_gain(double norm_gain, size_t chan)
 {
-#ifdef UHD_USRP_MULTI_USRP_NORMALIZED_GAIN
     _dev->set_normalized_rx_gain(norm_gain, chan);
-#else
-    if (norm_gain > 1.0 || norm_gain < 0.0) {
-        throw std::runtime_error("Normalized gain out of range, must be in [0, 1].");
-    }
-    ::uhd::gain_range_t gain_range = get_gain_range(chan);
-    double abs_gain =
-        (norm_gain * (gain_range.stop() - gain_range.start())) + gain_range.start();
-    set_gain(abs_gain, chan);
-#endif
 }
 
 double usrp_source_impl::get_gain(size_t chan)
@@ -170,19 +175,7 @@ double usrp_source_impl::get_gain(const std::string& name, size_t chan)
 
 double usrp_source_impl::get_normalized_gain(size_t chan)
 {
-#ifdef UHD_USRP_MULTI_USRP_NORMALIZED_GAIN
     return _dev->get_normalized_rx_gain(chan);
-#else
-    ::uhd::gain_range_t gain_range = get_gain_range(chan);
-    double norm_gain =
-        (get_gain(chan) - gain_range.start()) / (gain_range.stop() - gain_range.start());
-    // Avoid rounding errors:
-    if (norm_gain > 1.0)
-        return 1.0;
-    if (norm_gain < 0.0)
-        return 0.0;
-    return norm_gain;
-#endif
 }
 
 std::vector<std::string> usrp_source_impl::get_gain_names(size_t chan)
@@ -409,11 +402,7 @@ void usrp_source_impl::set_dc_offset(const std::complex<double>& offset, size_t 
 void usrp_source_impl::set_auto_iq_balance(const bool enable, size_t chan)
 {
     chan = _stream_args.channels[chan];
-#ifdef UHD_USRP_MULTI_USRP_FRONTEND_IQ_AUTO_API
     return _dev->set_rx_iq_balance(enable, chan);
-#else
-    throw std::runtime_error("not implemented in this version");
-#endif
 }
 
 
@@ -441,6 +430,44 @@ std::vector<std::string> usrp_source_impl::get_sensor_names(size_t chan)
     return _dev->get_rx_dboard_iface(chan);
 }
 
+#if UHD_VERSION >= 4000000
+std::vector<std::string> usrp_source_impl::get_filter_names(const size_t chan)
+{
+    return _dev->get_rx_filter_names(chan);
+}
+
+::uhd::filter_info_base::sptr usrp_source_impl::get_filter(const std::string& path,
+                                                           const size_t chan)
+{
+    return _dev->get_rx_filter(path, chan);
+}
+
+void usrp_source_impl::set_filter(const std::string& path,
+                                  ::uhd::filter_info_base::sptr filter,
+                                  const size_t chan)
+{
+    _dev->set_rx_filter(path, filter, chan);
+}
+#else
+std::vector<std::string> usrp_source_impl::get_filter_names(const size_t /*chan*/)
+{
+    return _dev->get_filter_names("rx");
+}
+
+::uhd::filter_info_base::sptr usrp_source_impl::get_filter(const std::string& path,
+                                                           const size_t /*chan*/)
+{
+    return _dev->get_filter(path);
+}
+
+void usrp_source_impl::set_filter(const std::string& path,
+                                  ::uhd::filter_info_base::sptr filter,
+                                  const size_t /*chan*/)
+{
+    _dev->set_filter(path, filter);
+}
+#endif
+
 void usrp_source_impl::set_stream_args(const ::uhd::stream_args_t& stream_args)
 {
     _update_stream_args(stream_args);
@@ -460,14 +487,7 @@ void usrp_source_impl::set_start_time(const ::uhd::time_spec_t& time)
 
 void usrp_source_impl::issue_stream_cmd(const ::uhd::stream_cmd_t& cmd)
 {
-// This is a new define in UHD 3.6 which is used to separate 3.6 and pre 3.6
-#ifdef INCLUDED_UHD_UTILS_MSG_TASK_HPP
     _rx_stream->issue_stream_cmd(cmd);
-#else
-    for (size_t i = 0; i < _stream_args.channels.size(); i++) {
-        _dev->issue_stream_cmd(cmd, _stream_args.channels[i]);
-    }
-#endif
     _tag_now = true;
 }
 
@@ -479,7 +499,7 @@ void usrp_source_impl::set_recv_timeout(const double timeout, const bool one_pac
 
 bool usrp_source_impl::start(void)
 {
-    boost::recursive_mutex::scoped_lock lock(d_mutex);
+    std::lock_guard<std::recursive_mutex> lock(d_mutex);
     if (not _rx_stream) {
         _rx_stream = _dev->get_rx_stream(_stream_args);
         _samps_per_packet = _rx_stream->get_max_num_samps();
@@ -525,7 +545,7 @@ void usrp_source_impl::flush(void)
 
 bool usrp_source_impl::stop(void)
 {
-    boost::recursive_mutex::scoped_lock lock(d_mutex);
+    std::lock_guard<std::recursive_mutex> lock(d_mutex);
     this->issue_stream_cmd(::uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
     this->flush();
 
@@ -585,7 +605,7 @@ int usrp_source_impl::work(int noutput_items,
                            gr_vector_const_void_star& input_items,
                            gr_vector_void_star& output_items)
 {
-    boost::recursive_mutex::scoped_lock lock(d_mutex);
+    std::lock_guard<std::recursive_mutex> lock(d_mutex);
     boost::this_thread::disable_interruption disable_interrupt;
     // In order to allow for low-latency:
     // We receive all available packets without timeout.
@@ -621,17 +641,27 @@ int usrp_source_impl::work(int noutput_items,
         // its ok to timeout, perhaps the user is doing finite streaming
         return 0;
 
-    case ::uhd::rx_metadata_t::ERROR_CODE_OVERFLOW:
+    case ::uhd::rx_metadata_t::ERROR_CODE_OVERFLOW: {
+        static auto oflow_msg =
+            boost::format("In the last %d ms, %d overflows occurred.");
         _tag_now = true;
+        ++_overflow_count;
+        auto now = std::chrono::steady_clock::now();
+        auto delta = now - _last_log;
+        if (delta > _overflow_log_interval) {
+            _last_log = now;
+            auto ms =
+                std::chrono::duration_cast<std::chrono::milliseconds>(delta).count();
+            GR_LOG_ERROR(d_logger, oflow_msg % ms % _overflow_count);
+            _overflow_count = 0;
+        }
         // ignore overflows and try work again
         return work(noutput_items, input_items, output_items);
+    }
 
     default:
-        // GR_LOG_WARN(d_logger, boost::format("USRP Source Block caught rx error: %d") %
-        // _metadata.strerror());
         GR_LOG_WARN(d_logger,
-                    boost::format("USRP Source Block caught rx error code: %d") %
-                        _metadata.error_code);
+                    "USRP Source Block caught rx error: " + _metadata.strerror());
         return num_samps;
     }
 

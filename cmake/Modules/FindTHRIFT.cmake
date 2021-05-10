@@ -3,7 +3,8 @@ if(NOT PKG_CONFIG_FOUND)
 endif()
 PKG_CHECK_MODULES(PC_THRIFT thrift)
 
-set(THRIFT_REQ_VERSION "0.9.2")
+set(THRIFT_REQ_VERSION ${THRIFT_FIND_VERSION})
+message(STATUS "thrift looking for version ${THRIFT_REQ_VERSION}")
 
 # If pkg-config found Thrift and it doesn't meet our version
 # requirement, warn and exit -- does not cause an error; just doesn't
@@ -72,7 +73,19 @@ ENDIF  (CMAKE_CROSSCOMPILING)
 
 # Set to found if we've made it this far
 if(THRIFT_INCLUDE_DIRS AND THRIFT_LIBRARIES AND PYTHON_THRIFT_FOUND)
-  set(THRIFT_FOUND TRUE CACHE BOOL "If Thift has been found")
+  set(THRIFT_FOUND TRUE CACHE BOOL "If Thrift has been found")
+
+  find_file(THRIFT_HAS_VERSION_H thrift/version.h
+    PATH ${THRIFT_INCLUDE_DIRS} NO_DEFAULT_PATH)
+  if(THRIFT_HAS_VERSION_H-FOUND)
+    set(THRIFT_HAS_VERSION_H TRUE CACHE BOOL "If Thrift has thrift/version.h")
+  endif()
+
+  find_file(THRIFT_HAS_THREADFACTORY_H thrift/concurrency/ThreadFactory.h
+    PATH ${THRIFT_INCLUDE_DIRS} NO_DEFAULT_PATH)
+  if(THRIFT_HAS_THREADFACTORY_H-FOUND)
+    set(THRIFT_HAS_THREADFACTORY_H TRUE CACHE BOOL "If Thrift has thrift/concurrency/ThreadFactory.h")
+  endif()
 endif(THRIFT_INCLUDE_DIRS AND THRIFT_LIBRARIES AND PYTHON_THRIFT_FOUND)
 
 

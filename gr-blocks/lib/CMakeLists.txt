@@ -8,7 +8,8 @@
 ########################################################################
 # Setup compatibility checks and defines
 ########################################################################
-include(${CMAKE_CURRENT_SOURCE_DIR}/ConfigChecks.cmake)
+include(GrMiscUtils)
+GR_CHECK_HDR_N_DEF(io.h HAVE_IO_H)
 
 ########################################################################
 # Setup library
@@ -115,14 +116,8 @@ set(BLOCKS_SOURCES
     null_source_impl.cc
     pack_k_bits_bb_impl.cc
     patterned_interleaver_impl.cc
-    pdu.cc
     tag_debug_impl.cc
-    pdu_filter_impl.cc
-    pdu_set_impl.cc
-    pdu_remove_impl.cc
-    pdu_to_tagged_stream_impl.cc
     peak_detector2_fb_impl.cc
-    random_pdu_impl.cc
     plateau_detector_fb_impl.cc
     probe_rate_impl.cc
     regenerate_bb_impl.cc
@@ -134,10 +129,8 @@ set(BLOCKS_SOURCES
     short_to_char_impl.cc
     short_to_float_impl.cc
     skiphead_impl.cc
-    socket_pdu_impl.cc
     stream_demux_impl.cc
     stream_mux_impl.cc
-    stream_pdu_base.cc
     stream_to_streams_impl.cc
     stream_to_tagged_stream_impl.cc
     stream_to_vector_impl.cc
@@ -146,23 +139,17 @@ set(BLOCKS_SOURCES
     stretch_ff_impl.cc
     tag_share_impl.cc
     tagged_file_sink_impl.cc
-    tagged_stream_to_pdu_impl.cc
     tagged_stream_multiply_length_impl.cc
     tags_strobe_impl.cc
     test_tag_variable_rate_ff_impl.cc
     threshold_ff_impl.cc
     throttle_impl.cc
     transcendental_impl.cc
-    tcp_connection.cc
-    tcp_server_sink_impl.cc
-    tuntap_pdu_impl.cc
     tag_gate_impl.cc
     tagged_stream_align_impl.cc
     tagged_stream_mux_impl.cc
     uchar_array_to_float.cc
     uchar_to_float_impl.cc
-    udp_sink_impl.cc
-    udp_source_impl.cc
     unpack_k_bits_bb_impl.cc
     vco_f_impl.cc
     vco_c_impl.cc

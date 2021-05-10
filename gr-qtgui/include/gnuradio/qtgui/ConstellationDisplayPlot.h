@@ -12,7 +12,7 @@
 #define CONSTELLATION_DISPLAY_PLOT_H
 
 #include <gnuradio/qtgui/DisplayPlot.h>
-#include <stdint.h>
+#include <cstdint>
 #include <cstdio>
 #include <vector>
 
@@ -52,8 +52,8 @@ public slots:
 private:
     void _autoScale(double bottom, double top);
 
-    std::vector<double*> d_real_data;
-    std::vector<double*> d_imag_data;
+    std::vector<std::vector<double>> d_real_data;
+    std::vector<std::vector<double>> d_imag_data;
 
     int64_t d_pen_size;
 };

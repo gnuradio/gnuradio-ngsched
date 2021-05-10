@@ -1,4 +1,4 @@
-#Copyright 2020 Free Software Foundation, Inc.
+#Copyright 2020-2021 Free Software Foundation, Inc.
 #
 #This file is a part of gnuradio
 #
@@ -6,38 +6,36 @@
 #
 
 ########################################################################
+# Setup compatibility checks and defines
+########################################################################
+include(GrMiscUtils)
+include(CheckCXXSourceCompiles)
+GR_CHECK_HDR_N_DEF(io.h HAVE_IO_H)
+CHECK_INCLUDE_FILE_CXX(windows.h HAVE_WINDOWS_H)
+
+########################################################################
 #Setup library
 ########################################################################
-include(GrPlatform) 
-
-#define LIB_SUFFIX
-
-list(APPEND network_sources 
+add_library(gnuradio-network
+    socket_pdu_impl.cc
+    stream_pdu_base.cc
+    tcp_connection.cc
     tcp_sink_impl.cc
+    tuntap_pdu_impl.cc
     udp_sink_impl.cc
     udp_source_impl.cc
 )
 
-set(network_sources "${network_sources}" PARENT_SCOPE) 
-if (NOT network_sources) 
-    MESSAGE(STATUS "No C++ sources... skipping lib/")
-    return ()
-endif(NOT network_sources)
-
-add_library(gnuradio-network SHARED ${network_sources})
 target_link_libraries(gnuradio-network PUBLIC gnuradio-runtime)
 target_include_directories(gnuradio-network
     PUBLIC $<INSTALL_INTERFACE:include>
-    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include> 
-) 
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+)
 
-set_target_properties(gnuradio-network PROPERTIES DEFINE_SYMBOL "gnuradio_network_EXPORTS")
-
-if (APPLE) 
-    set_target_properties(gnuradio-network PROPERTIES 
-        INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
-    ) 
-endif(APPLE)
+if(HAVE_WINDOWS_H)
+    target_compile_definitions(gnuradio-network PRIVATE -DHAVE_WINDOWS_H)
+    target_link_libraries(gnuradio-network PRIVATE ws2_32 wsock32)
+endif()
 
 #Add Windows DLL resource file if using MSVC
 if (MSVC)
@@ -56,34 +54,24 @@ endif (MSVC)
 ########################################################################
 #Install built library files
 ########################################################################
-include(GrMiscUtils)
-GR_LIBRARY_FOO(gnuradio-network)
-
-########################################################################
-#Print summary
-########################################################################
-message(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Building for version: ${VERSION} / ${LIBVER}")
+if(BUILD_SHARED_LIBS)
+    GR_LIBRARY_FOO(gnuradio-network)
+endif()
 
 ########################################################################
 #Build and register unit test
 ########################################################################
-include(GrTest)
+if(ENABLE_TESTING)
+    include(GrTest)
 
-#If your unit tests require special include paths, add them here
-#include_directories()
-#List all files that contain Boost.UTF unit tests here
-list(APPEND test_network_sources)
-#Anything we need to link to for the unit tests go here
-list(APPEND GR_TEST_TARGET_DEPS gnuradio-network)
+    list(APPEND test_network_sources
+    )
+    list(APPEND GR_TEST_TARGET_DEPS gnuradio-network)
 
-if (NOT test_network_sources)
-    MESSAGE(STATUS "No C++ unit tests... skipping") 
-    return ()
-endif(NOT test_network_sources)
+    foreach (qa_file ${test_network_sources})
+        GR_ADD_CPP_TEST("network_${qa_file}"
+            ${CMAKE_CURRENT_SOURCE_DIR}/${qa_file}
+        )
+    endforeach(qa_file)
 
-foreach (qa_file ${test_network_sources})
-    GR_ADD_CPP_TEST("network_${qa_file}" 
-        ${CMAKE_CURRENT_SOURCE_DIR }/${ qa_file }
-    ) 
-endforeach(qa_file)
+endif(ENABLE_TESTING)

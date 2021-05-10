@@ -14,7 +14,7 @@ import math
 from gnuradio import gr, fft, blocks
 
 from . import optfir
-from . import filter_python as filter
+from . import filter_python as filter, fft
 
 
 class channelizer_ccf(gr.hier_block2):
@@ -66,7 +66,7 @@ class channelizer_ccf(gr.hier_block2):
         ripple = 0.1
         while True:
             try:
-                taps = optfir.low_pass(1, self._nchans, bw, bw+tb, ripple, atten)
+                taps = optfir.low_pass(1, numchans, bw, bw+tb, ripple, atten)
                 return taps
             except RuntimeError:
                 ripple += 0.01
@@ -247,7 +247,7 @@ class arb_resampler_ccf(gr.hier_block2):
             # As we drop the bw factor, the optfir filter has a harder time converging;
             # using the firdes method here for better results.
             return filter.firdes.low_pass_2(flt_size, flt_size, bw, tb, atten,
-                                                  filter.firdes.WIN_BLACKMAN_HARRIS)
+                                                  fft.window.WIN_BLACKMAN_HARRIS)
         else:
             halfband = 0.5
             bw = percent*halfband
@@ -325,7 +325,7 @@ class arb_resampler_fff(gr.hier_block2):
             # As we drop the bw factor, the optfir filter has a harder time converging;
             # using the firdes method here for better results.
             return filter.firdes.low_pass_2(flt_size, flt_size, bw, tb, atten,
-                                                  filter.firdes.WIN_BLACKMAN_HARRIS)
+                                                  fft.window.WIN_BLACKMAN_HARRIS)
         else:
             halfband = 0.5
             bw = percent*halfband

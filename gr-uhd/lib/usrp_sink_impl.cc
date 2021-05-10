@@ -11,8 +11,14 @@
 #include "gr_uhd_common.h"
 #include "usrp_sink_impl.h"
 #include <gnuradio/io_signature.h>
+#include <gnuradio/prefs.h>
+#include <boost/thread/thread.hpp>
+#include <chrono>
 #include <climits>
 #include <stdexcept>
+#include <thread>
+
+using namespace std::chrono_literals;
 
 namespace gr {
 namespace uhd {
@@ -84,7 +90,7 @@ double usrp_sink_impl::get_samp_rate(void)
 ::uhd::tune_result_t
 usrp_sink_impl::set_center_freq(const ::uhd::tune_request_t tune_request, size_t chan)
 {
-    _curr_tune_req[chan] = tune_request;
+    _curr_tx_tune_req[chan] = tune_request;
     chan = _stream_args.channels[chan];
     return _dev->set_tx_freq(tune_request, chan);
 }
@@ -92,12 +98,13 @@ usrp_sink_impl::set_center_freq(const ::uhd::tune_request_t tune_request, size_t
 ::uhd::tune_result_t usrp_sink_impl::_set_center_freq_from_internals(size_t chan,
                                                                      pmt::pmt_t direction)
 {
-    _chans_to_tune.reset(chan);
-    if (pmt::eqv(direction, ant_direction_rx())) {
+    if (pmt::eqv(direction, direction_rx())) {
         // TODO: what happens if the RX device is not instantiated? Catch error?
-        return _dev->set_rx_freq(_curr_tune_req[chan], _stream_args.channels[chan]);
+        _rx_chans_to_tune.reset(chan);
+        return _dev->set_rx_freq(_curr_rx_tune_req[chan], _stream_args.channels[chan]);
     } else {
-        return _dev->set_tx_freq(_curr_tune_req[chan], _stream_args.channels[chan]);
+        _tx_chans_to_tune.reset(chan);
+        return _dev->set_tx_freq(_curr_tx_tune_req[chan], _stream_args.channels[chan]);
     }
 }
 
@@ -113,10 +120,14 @@ double usrp_sink_impl::get_center_freq(size_t chan)
     return _dev->get_tx_freq_range(chan);
 }
 
-void usrp_sink_impl::set_gain(double gain, size_t chan)
+void usrp_sink_impl::set_gain(double gain, size_t chan, pmt::pmt_t direction)
 {
     chan = _stream_args.channels[chan];
-    return _dev->set_tx_gain(gain, chan);
+    if (pmt::eqv(direction, direction_rx())) {
+        return _dev->set_rx_gain(gain, chan);
+    } else {
+        return _dev->set_tx_gain(gain, chan);
+    }
 }
 
 void usrp_sink_impl::set_gain(double gain, const std::string& name, size_t chan)
@@ -127,17 +138,7 @@ void usrp_sink_impl::set_gain(double gain, const std::string& name, size_t chan)
 
 void usrp_sink_impl::set_normalized_gain(double norm_gain, size_t chan)
 {
-#ifdef UHD_USRP_MULTI_USRP_NORMALIZED_GAIN
     _dev->set_normalized_tx_gain(norm_gain, chan);
-#else
-    if (norm_gain > 1.0 || norm_gain < 0.0) {
-        throw std::runtime_error("Normalized gain out of range, must be in [0, 1].");
-    }
-    ::uhd::gain_range_t gain_range = get_gain_range(chan);
-    double abs_gain =
-        (norm_gain * (gain_range.stop() - gain_range.start())) + gain_range.start();
-    set_gain(abs_gain, chan);
-#endif
 }
 
 double usrp_sink_impl::get_gain(size_t chan)
@@ -154,19 +155,7 @@ double usrp_sink_impl::get_gain(const std::string& name, size_t chan)
 
 double usrp_sink_impl::get_normalized_gain(size_t chan)
 {
-#ifdef UHD_USRP_MULTI_USRP_NORMALIZED_GAIN
     return _dev->get_normalized_tx_gain(chan);
-#else
-    ::uhd::gain_range_t gain_range = get_gain_range(chan);
-    double norm_gain =
-        (get_gain(chan) - gain_range.start()) / (gain_range.stop() - gain_range.start());
-    // Avoid rounding errors:
-    if (norm_gain > 1.0)
-        return 1.0;
-    if (norm_gain < 0.0)
-        return 0.0;
-    return norm_gain;
-#endif
 }
 
 std::vector<std::string> usrp_sink_impl::get_gain_names(size_t chan)
@@ -408,6 +397,44 @@ std::vector<std::string> usrp_sink_impl::get_sensor_names(size_t chan)
     return _dev->get_tx_dboard_iface(chan);
 }
 
+#if UHD_VERSION >= 4000000
+std::vector<std::string> usrp_sink_impl::get_filter_names(const size_t chan)
+{
+    return _dev->get_tx_filter_names(chan);
+}
+
+::uhd::filter_info_base::sptr usrp_sink_impl::get_filter(const std::string& path,
+                                                         const size_t chan)
+{
+    return _dev->get_tx_filter(path, chan);
+}
+
+void usrp_sink_impl::set_filter(const std::string& path,
+                                ::uhd::filter_info_base::sptr filter,
+                                const size_t chan)
+{
+    _dev->set_tx_filter(path, filter, chan);
+}
+#else
+std::vector<std::string> usrp_sink_impl::get_filter_names(const size_t /*chan*/)
+{
+    return _dev->get_filter_names("tx");
+}
+
+::uhd::filter_info_base::sptr usrp_sink_impl::get_filter(const std::string& path,
+                                                         const size_t /*chan*/)
+{
+    return _dev->get_filter(path);
+}
+
+void usrp_sink_impl::set_filter(const std::string& path,
+                                ::uhd::filter_info_base::sptr filter,
+                                const size_t /*chan*/)
+{
+    _dev->set_filter(path, filter);
+}
+#endif
+
 void usrp_sink_impl::set_stream_args(const ::uhd::stream_args_t& stream_args)
 {
     _update_stream_args(stream_args);
@@ -448,8 +475,10 @@ int usrp_sink_impl::work(int noutput_items,
             // There is a tag gap since no length_tag was found immediately following
             // the last sample of the previous burst. Drop samples until the next
             // length_tag is found. Notify the user of the tag gap.
-            GR_LOG_ERROR(d_logger, "tG");
-            // increment the timespec by the number of samples dropped
+            static auto formatted_log_entry =
+                boost::format("Tag gap (nitems_read = %d): no more items to send in "
+                              "current burst, but got %d more items; dropping them.");
+            GR_LOG_ERROR(d_logger, formatted_log_entry % samp0_count % ninput_items);
             _metadata.time_spec += ::uhd::time_spec_t(0, ninput_items, _sample_rate);
             return ninput_items;
         }
@@ -470,9 +499,8 @@ int usrp_sink_impl::work(int noutput_items,
 
     // Some post-processing tasks if we actually transmitted the entire burst
     if (not _pending_cmds.empty() && num_sent == size_t(ninput_items)) {
-        GR_LOG_DEBUG(d_debug_logger,
-                     boost::format("Executing %d pending commands.") %
-                         _pending_cmds.size());
+        static auto debug_msg = boost::format("Executing %d pending commands.");
+        GR_LOG_DEBUG(d_debug_logger, debug_msg % _pending_cmds.size());
         for (const auto& cmd_pmt : _pending_cmds) {
             msg_handler_command(cmd_pmt);
         }
@@ -710,11 +738,28 @@ void usrp_sink_impl::async_event_loop()
     typedef ::uhd::async_metadata_t md_t;
     md_t metadata;
 
+    using clock = std::chrono::steady_clock;
+    auto millisecond_cast = [](auto timediff) {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(timediff);
+    };
+    unsigned int underflow_counter = 0;
+    unsigned int time_error_counter = 0;
+    unsigned int sequence_error_counter = 0;
+    auto last_underflow_log = clock::now();
+    auto last_time_err_log = clock::now();
+    auto last_sequence_err_log = clock::now();
+    auto log_interval = std::chrono::milliseconds(
+        gr::prefs::singleton()->get_long("uhd", "logging_interval_ms", 750));
+
+    auto uflow_msg = boost::format("In the last %d ms, %d underflows occurred.");
+    auto time_msg = boost::format("In the last %d ms, %d cmd time errors occurred.");
+
     while (_async_event_loop_running) {
-        while (!_dev->get_device()->recv_async_msg(metadata, 0.1)) {
-            if (!_async_event_loop_running) {
-                return;
-            }
+        // The Tx Streamer does not exist until start() was called. After that,
+        // we poll it with a 100ms timeout for async messages.
+        if (!_tx_stream || !_tx_stream->recv_async_msg(metadata, 0.1)) {
+            std::this_thread::sleep_for(100ms);
+            continue;
         }
 
         pmt::pmt_t event_list = pmt::PMT_NIL;
@@ -724,18 +769,23 @@ void usrp_sink_impl::async_event_loop()
         }
         if (metadata.event_code & md_t::EVENT_CODE_UNDERFLOW) {
             event_list = pmt::list_add(event_list, UNDERFLOW_KEY);
+            ++underflow_counter;
         }
         if (metadata.event_code & md_t::EVENT_CODE_UNDERFLOW_IN_PACKET) {
             event_list = pmt::list_add(event_list, UNDERFLOW_IN_PACKET_KEY);
+            ++underflow_counter;
         }
         if (metadata.event_code & md_t::EVENT_CODE_SEQ_ERROR) {
             event_list = pmt::list_add(event_list, SEQ_ERROR_KEY);
+            ++sequence_error_counter;
         }
         if (metadata.event_code & md_t::EVENT_CODE_SEQ_ERROR_IN_BURST) {
             event_list = pmt::list_add(event_list, SEQ_ERROR_IN_BURST_KEY);
+            ++sequence_error_counter;
         }
         if (metadata.event_code & md_t::EVENT_CODE_TIME_ERROR) {
             event_list = pmt::list_add(event_list, TIME_ERROR_KEY);
+            ++time_error_counter;
         }
 
         if (!pmt::eq(event_list, pmt::PMT_NIL)) {
@@ -751,8 +801,37 @@ void usrp_sink_impl::async_event_loop()
             pmt::pmt_t msg = pmt::cons(ASYNC_MSG_KEY, value);
             message_port_pub(ASYNC_MSGS_PORT_KEY, msg);
         }
+        if (underflow_counter) {
+            auto now = clock::now();
+            auto delta = now - last_underflow_log;
+            if (delta > log_interval) {
+                auto ms = millisecond_cast(delta).count();
+                GR_LOG_ERROR(d_logger, uflow_msg % ms % underflow_counter);
+                last_underflow_log = now;
+                underflow_counter = 0;
+            }
+        }
+        if (time_error_counter) {
+            auto now = clock::now();
+            auto delta = now - last_time_err_log;
+            if (delta > log_interval) {
+                auto ms = millisecond_cast(delta).count();
+                GR_LOG_ERROR(d_logger, time_msg % ms % time_error_counter);
+                last_time_err_log = now;
+                time_error_counter = 0;
+            }
+        }
+        if (sequence_error_counter) {
+            auto now = clock::now();
+            auto delta = now - last_sequence_err_log;
+            if (delta > log_interval) {
+                auto ms = millisecond_cast(delta).count();
+                GR_LOG_ERROR(d_logger, time_msg % ms % sequence_error_counter);
+                last_sequence_err_log = now;
+                time_error_counter = 0;
+            }
+        }
     }
 }
-
-} /* namespace uhd */
-} /* namespace gr */
+} // namespace uhd
+} // namespace gr

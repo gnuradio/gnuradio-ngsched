@@ -155,7 +155,7 @@ void EyeDisplaysForm::resizeEvent(QResizeEvent* e)
 void EyeDisplaysForm::mousePressEvent(QMouseEvent* e)
 {
     bool ctrloff = Qt::ControlModifier != QApplication::keyboardModifiers();
-    if ((e->button() == Qt::MidButton) && ctrloff && (d_menu_on)) {
+    if ((e->button() == Qt::MiddleButton) && ctrloff && (d_menu_on)) {
         if (d_stop_state == false)
             d_stop_act->setText(tr("Stop"));
         else
@@ -332,7 +332,7 @@ void EyeDisplaysForm::setAxisLabels(bool en)
 
 void EyeDisplaysForm::saveFigure()
 {
-    QPixmap qpix = QPixmap::grabWidget(this);
+    QPixmap qpix = grab();
 
     QString types = QString(tr("JPEG file (*.jpg);;Portable Network Graphics file "
                                "(*.png);;Bitmap file (*.bmp);;TIFF file (*.tiff)"));

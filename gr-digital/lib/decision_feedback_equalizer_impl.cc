@@ -16,8 +16,8 @@
 #include "decision_feedback_equalizer_impl.h"
 #include <gnuradio/io_signature.h>
 #include <volk/volk.h>
-#include <boost/smart_ptr/make_unique.hpp>
 #include <algorithm>
+#include <memory>
 
 using namespace std;
 namespace gr {
@@ -64,7 +64,6 @@ decision_feedback_equalizer_impl::decision_feedback_equalizer_impl(
                                                                sizeof(unsigned short) }),
                          sps),
       filter::kernel::fir_filter_ccc(
-          sps,
           vector<gr_complex>(num_taps_forward + num_taps_feedback, gr_complex(0, 0))),
       d_num_taps_fwd(num_taps_forward),
       d_num_taps_rev(num_taps_feedback),
@@ -83,7 +82,7 @@ decision_feedback_equalizer_impl::decision_feedback_equalizer_impl(
     // not reversed at this point
     d_new_taps[0] = gr_complex(1.0, 0.0); // help things along with initialized taps
 
-    if (training_start_tag == "" || training_sequence.empty()) {
+    if (training_start_tag.empty() || training_sequence.empty()) {
         d_training_state = equalizer_state_t::DD;
     } else {
         d_training_state = equalizer_state_t::IDLE;
@@ -182,7 +181,7 @@ int decision_feedback_equalizer_impl::equalize(
         samples = input_samples;
     } else {
         in_prepended_history =
-            boost::make_unique<std::vector<gr_complex>>(num_inputs + d_num_taps_fwd - 1);
+            std::make_unique<std::vector<gr_complex>>(num_inputs + d_num_taps_fwd - 1);
         std::copy(input_samples,
                   input_samples + num_inputs,
                   in_prepended_history->begin() + d_num_taps_fwd - 1);
@@ -207,7 +206,7 @@ int decision_feedback_equalizer_impl::equalize(
         if (state)
             state[i] = (unsigned short)d_training_state;
 
-        if (training_start_samples.size() > 0 &&
+        if (!training_start_samples.empty() &&
             tag_index < training_start_samples.size()) {
             int tag_sample = training_start_samples[tag_index];
             if (tag_sample >= j && tag_sample < (j + (int)decimation())) {

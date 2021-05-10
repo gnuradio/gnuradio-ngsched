@@ -15,7 +15,6 @@ install(FILES
     filter_filter_delay_fc.block.yml
     filter_filterbank_vcvcf.block.yml
     filter_ival_decimator.block.yml
-    filter_mmse_interpolator_xx.block.yml
     filter_mmse_resampler_xx.block.yml
     filter_freq_xlating_fft_filter_ccc.block.yml
     filter_freq_xlating_fir_filter_xxx.block.yml
@@ -29,7 +28,6 @@ install(FILES
     filter_pfb_interpolator.block.yml
     filter_pfb_synthesizer.block.yml
     filter_rational_resampler_xxx.block.yml
-    filter_rational_resampler_base_xxx.block.yml
     filter_single_pole_iir_filter_xx.block.yml
     filter_low_pass_filter.block.yml
     filter_high_pass_filter.block.yml

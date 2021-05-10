@@ -28,23 +28,7 @@ namespace filter {
 class FILTER_API firdes
 {
 public:
-    // WARNING: deprecated, now located in gr::fft::window.
-    // We will be removing this in 3.8.
-    enum win_type {
-        WIN_NONE = -1,       //!< don't use a window
-        WIN_HAMMING = 0,     //!< Hamming window; max attenuation 53 dB
-        WIN_HANN = 1,        //!< Hann window; max attenuation 44 dB
-        WIN_BLACKMAN = 2,    //!< Blackman window; max attenuation 74 dB
-        WIN_RECTANGULAR = 3, //!< Basic rectangular window
-        WIN_KAISER = 4, //!< Kaiser window; max attenuation a function of beta, google it
-        WIN_BLACKMAN_hARRIS = 5, //!< Blackman-harris window
-        WIN_BLACKMAN_HARRIS =
-            5,            //!< alias to WIN_BLACKMAN_hARRIS for capitalization consistency
-        WIN_BARTLETT = 6, //!< Barlett (triangular) window
-        WIN_FLATTOP = 7,  //!< flat top window; useful in FFTs
-    };
-
-    static std::vector<float> window(win_type type, int ntaps, double beta);
+    static std::vector<float> window(fft::window::win_type type, int ntaps, double param);
 
     // ... class methods ...
 
@@ -56,18 +40,18 @@ public:
      *
      * \param gain                overall gain of filter (typically 1.0)
      * \param sampling_freq       sampling freq (Hz)
-     * \param cutoff_freq	        center of transition band (Hz)
-     * \param transition_width	width of transition band (Hz)
-     * \param window              one of firdes::win_type
-     * \param beta                parameter for Kaiser window
+     * \param cutoff_freq         center of transition band (Hz)
+     * \param transition_width    width of transition band (Hz)
+     * \param window              one of fft::window::win_type
+     * \param param               parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
     static std::vector<float>
     low_pass(double gain,
              double sampling_freq,
              double cutoff_freq,      // Hz center of transition band
              double transition_width, // Hz width of transition band
-             win_type window = WIN_HAMMING,
-             double beta = 6.76); // used only with Kaiser
+             fft::window::win_type window = fft::window::win_type::WIN_HAMMING,
+             double param = 6.76); // used for Kaiser, Exp., Gaussian, Tukey windows
 
     /*!
      * \brief Use "window method" to design a low-pass FIR filter.  The
@@ -81,8 +65,8 @@ public:
      * \param cutoff_freq         beginning of transition band (Hz)
      * \param transition_width    width of transition band (Hz)
      * \param attenuation_dB      required stopband attenuation
-     * \param window              one of firdes::win_type
-     * \param beta		        parameter for Kaiser window
+     * \param window              one of fft::window::win_type
+     * \param param               parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
     static std::vector<float>
     low_pass_2(double gain,
@@ -90,8 +74,8 @@ public:
                double cutoff_freq,      // Hz beginning transition band
                double transition_width, // Hz width of transition band
                double attenuation_dB,   // out of band attenuation dB
-               win_type window = WIN_HAMMING,
-               double beta = 6.76); // used only with Kaiser
+               fft::window::win_type window = fft::window::win_type::WIN_HAMMING,
+               double param = 6.76); // used for Kaiser, Exp., Gaussian, Tukey windows
 
     /*!
      * \brief Use "window method" to design a high-pass FIR filter.  The
@@ -103,16 +87,16 @@ public:
      * \param sampling_freq       sampling freq (Hz)
      * \param cutoff_freq         center of transition band (Hz)
      * \param transition_width    width of transition band (Hz)
-     * \param window              one of firdes::win_type
-     * \param beta                parameter for Kaiser window
+     * \param window              one of fft::window::win_type
+     * \param param               parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
     static std::vector<float>
     high_pass(double gain,
               double sampling_freq,
               double cutoff_freq,      // Hz center of transition band
               double transition_width, // Hz width of transition band
-              win_type window = WIN_HAMMING,
-              double beta = 6.76); // used only with Kaiser
+              fft::window::win_type window = fft::window::win_type::WIN_HAMMING,
+              double param = 6.76); // used for Kaiser, Exp., Gaussian, Tukey windows
 
     /*!
      * \brief Use "window method" to design a high-pass FIR filter. The
@@ -126,8 +110,8 @@ public:
      * \param cutoff_freq         center of transition band (Hz)
      * \param transition_width    width of transition band (Hz).
      * \param attenuation_dB      out of band attenuation
-     * \param window              one of firdes::win_type
-     * \param beta                parameter for Kaiser window
+     * \param window              one of fft::window::win_type
+     * \param param               parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
     static std::vector<float>
     high_pass_2(double gain,
@@ -135,8 +119,8 @@ public:
                 double cutoff_freq,      // Hz center of transition band
                 double transition_width, // Hz width of transition band
                 double attenuation_dB,   // out of band attenuation dB
-                win_type window = WIN_HAMMING,
-                double beta = 6.76); // used only with Kaiser
+                fft::window::win_type window = fft::window::win_type::WIN_HAMMING,
+                double param = 6.76); // used for Kaiser, Exp., Gaussian, Tukey windows
 
     /*!
      * \brief Use "window method" to design a band-pass FIR filter. The
@@ -149,8 +133,8 @@ public:
      * \param low_cutoff_freq     center of transition band (Hz)
      * \param high_cutoff_freq    center of transition band (Hz)
      * \param transition_width    width of transition band (Hz).
-     * \param window              one of firdes::win_type
-     * \param beta                parameter for Kaiser window
+     * \param window              one of fft::window::win_type
+     * \param param               parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
     static std::vector<float>
     band_pass(double gain,
@@ -158,8 +142,8 @@ public:
               double low_cutoff_freq,  // Hz center of transition band
               double high_cutoff_freq, // Hz center of transition band
               double transition_width, // Hz width of transition band
-              win_type window = WIN_HAMMING,
-              double beta = 6.76); // used only with Kaiser
+              fft::window::win_type window = fft::window::win_type::WIN_HAMMING,
+              double param = 6.76); // used for Kaiser, Exp., Gaussian, Tukey windows
 
     /*!
      * \brief Use "window method" to design a band-pass FIR filter.  The
@@ -174,8 +158,8 @@ public:
      * \param high_cutoff_freq    center of transition band (Hz)
      * \param transition_width    width of transition band (Hz).
      * \param attenuation_dB      out of band attenuation
-     * \param window              one of firdes::win_type
-     * \param beta                parameter for Kaiser window
+     * \param window              one of fft::window::win_type
+     * \param param               parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
     static std::vector<float>
     band_pass_2(double gain,
@@ -184,8 +168,8 @@ public:
                 double high_cutoff_freq, // Hz beginning transition band
                 double transition_width, // Hz width of transition band
                 double attenuation_dB,   // out of band attenuation dB
-                win_type window = WIN_HAMMING,
-                double beta = 6.76); // used only with Kaiser
+                fft::window::win_type window = fft::window::win_type::WIN_HAMMING,
+                double param = 6.76); // used for Kaiser, Exp., Gaussian, Tukey windows
     /*!
      * \brief Use the "window method" to design a complex band-reject FIR
      * filter.  The normalized width of the transition band is what sets the
@@ -197,17 +181,17 @@ public:
      * \param low_cutoff_freq     center of transition band (Hz)
      * \param high_cutoff_freq    center of transition band (Hz)
      * \param transition_width    width of transition band (Hz)
-     * \param window              one of firdes::win_type
-     * \param beta                parameter for Kaiser window
+     * \param window              one of fft::window::win_type
+     * \param param               parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
-    static std::vector<gr_complex>
-    complex_band_reject(double gain,
-                        double sampling_freq,
-                        double low_cutoff_freq,
-                        double high_cutoff_freq,
-                        double transition_width, // Hz width of transition band
-                        win_type window = WIN_HAMMING,
-                        double beta = 6.76); // used only with Kaiser
+    static std::vector<gr_complex> complex_band_reject(
+        double gain,
+        double sampling_freq,
+        double low_cutoff_freq,
+        double high_cutoff_freq,
+        double transition_width, // Hz width of transition band
+        fft::window::win_type window = fft::window::win_type::WIN_HAMMING,
+        double param = 6.76); // used for Kaiser, Exp., Gaussian, Tukey windows
 
     /*!
      * \brief Use "window method" to design a complex band-reject FIR filter.
@@ -222,18 +206,18 @@ public:
      * \param high_cutoff_freq    center of transition band (Hz)
      * \param transition_width    width of transition band (Hz)
      * \param attenuation_dB      out of band attenuation
-     * \param window              one of firdes::win_type
-     * \param beta                parameter for Kaiser window
+     * \param window              one of fft::window::win_type
+     * \param param               parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
-    static std::vector<gr_complex>
-    complex_band_reject_2(double gain,
-                          double sampling_freq,
-                          double low_cutoff_freq,  // Hz beginning transition band
-                          double high_cutoff_freq, // Hz beginning transition band
-                          double transition_width, // Hz width of transition band
-                          double attenuation_dB,   // out of band attenuation dB
-                          win_type window = WIN_HAMMING,
-                          double beta = 6.76); // used only with Kaiser
+    static std::vector<gr_complex> complex_band_reject_2(
+        double gain,
+        double sampling_freq,
+        double low_cutoff_freq,  // Hz beginning transition band
+        double high_cutoff_freq, // Hz beginning transition band
+        double transition_width, // Hz width of transition band
+        double attenuation_dB,   // out of band attenuation dB
+        fft::window::win_type window = fft::window::win_type::WIN_HAMMING,
+        double param = 6.76); // used for Kaiser, Exp., Gaussian, Tukey windows
 
     /*!
      * \brief Use the "window method" to design a complex band-pass FIR
@@ -246,17 +230,17 @@ public:
      * \param low_cutoff_freq     center of transition band (Hz)
      * \param high_cutoff_freq    center of transition band (Hz)
      * \param transition_width    width of transition band (Hz)
-     * \param window              one of firdes::win_type
-     * \param beta                parameter for Kaiser window
+     * \param window              one of fft::window::win_type
+     * \param param               parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
-    static std::vector<gr_complex>
-    complex_band_pass(double gain,
-                      double sampling_freq,
-                      double low_cutoff_freq,  // Hz center of transition band
-                      double high_cutoff_freq, // Hz center of transition band
-                      double transition_width, // Hz width of transition band
-                      win_type window = WIN_HAMMING,
-                      double beta = 6.76); // used only with Kaiser
+    static std::vector<gr_complex> complex_band_pass(
+        double gain,
+        double sampling_freq,
+        double low_cutoff_freq,  // Hz center of transition band
+        double high_cutoff_freq, // Hz center of transition band
+        double transition_width, // Hz width of transition band
+        fft::window::win_type window = fft::window::win_type::WIN_HAMMING,
+        double param = 6.76); // used for Kaiser, Exp., Gaussian, Tukey windows
 
     /*!
      * \brief Use "window method" to design a complex band-pass FIR filter.
@@ -271,18 +255,18 @@ public:
      * \param high_cutoff_freq    center of transition band (Hz)
      * \param transition_width    width of transition band (Hz)
      * \param attenuation_dB      out of band attenuation
-     * \param window              one of firdes::win_type
-     * \param beta                parameter for Kaiser window
+     * \param window              one of fft::window::win_type
+     * \param param               parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
-    static std::vector<gr_complex>
-    complex_band_pass_2(double gain,
-                        double sampling_freq,
-                        double low_cutoff_freq,  // Hz beginning transition band
-                        double high_cutoff_freq, // Hz beginning transition band
-                        double transition_width, // Hz width of transition band
-                        double attenuation_dB,   // out of band attenuation dB
-                        win_type window = WIN_HAMMING,
-                        double beta = 6.76); // used only with Kaiser
+    static std::vector<gr_complex> complex_band_pass_2(
+        double gain,
+        double sampling_freq,
+        double low_cutoff_freq,  // Hz beginning transition band
+        double high_cutoff_freq, // Hz beginning transition band
+        double transition_width, // Hz width of transition band
+        double attenuation_dB,   // out of band attenuation dB
+        fft::window::win_type window = fft::window::win_type::WIN_HAMMING,
+        double param = 6.76); // used for Kaiser, Exp., Gaussian, Tukey windows
 
     /*!
      * \brief Use "window method" to design a band-reject FIR filter.  The
@@ -295,8 +279,8 @@ public:
      * \param low_cutoff_freq     center of transition band (Hz)
      * \param high_cutoff_freq    center of transition band (Hz)
      * \param transition_width    width of transition band (Hz)
-     * \param window              one of firdes::win_type
-     * \param beta                parameter for Kaiser window
+     * \param window              one of fft::window::win_type
+     * \param param               parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
     static std::vector<float>
     band_reject(double gain,
@@ -304,8 +288,8 @@ public:
                 double low_cutoff_freq,  // Hz center of transition band
                 double high_cutoff_freq, // Hz center of transition band
                 double transition_width, // Hz width of transition band
-                win_type window = WIN_HAMMING,
-                double beta = 6.76); // used only with Kaiser
+                fft::window::win_type window = fft::window::win_type::WIN_HAMMING,
+                double param = 6.76); // used for Kaiser, Exp., Gaussian, Tukey windows
 
     /*!
      * \brief Use "window method" to design a band-reject FIR filter.  The
@@ -320,8 +304,8 @@ public:
      * \param high_cutoff_freq    center of transition band (Hz)
      * \param transition_width    width of transition band (Hz).
      * \param attenuation_dB      out of band attenuation
-     * \param window              one of firdes::win_type
-     * \param beta                parameter for Kaiser window
+     * \param window              one of fft::window::win_type
+     * \param param               parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
     static std::vector<float>
     band_reject_2(double gain,
@@ -330,18 +314,19 @@ public:
                   double high_cutoff_freq, // Hz beginning transition band
                   double transition_width, // Hz width of transition band
                   double attenuation_dB,   // out of band attenuation dB
-                  win_type window = WIN_HAMMING,
-                  double beta = 6.76); // used only with Kaiser
+                  fft::window::win_type window = fft::window::win_type::WIN_HAMMING,
+                  double param = 6.76); // used for Kaiser, Exp., Gaussian, Tukey windows
 
     /*!\brief design a Hilbert Transform Filter
      *
      * \param ntaps           number of taps, must be odd
-     * \param windowtype      one kind of firdes::win_type
-     * \param beta            parameter for Kaiser window
+     * \param windowtype      one kind of fft::window::win_type
+     * \param param           parameter for Kaiser, Exp., Gaussian, Tukey windows
      */
-    static std::vector<float> hilbert(unsigned int ntaps = 19,
-                                      win_type windowtype = WIN_RECTANGULAR,
-                                      double beta = 6.76);
+    static std::vector<float>
+    hilbert(unsigned int ntaps = 19,
+            fft::window::win_type windowtype = fft::window::win_type::WIN_RECTANGULAR,
+            double param = 6.76);
 
     /*!
      * \brief design a Root Cosine FIR Filter (do we need a window?)
@@ -384,8 +369,8 @@ private:
 
     static int compute_ntaps(double sampling_freq,
                              double transition_width,
-                             win_type window_type,
-                             double beta);
+                             fft::window::win_type window_type,
+                             double param);
 
     static int compute_ntaps_windes(double sampling_freq,
                                     double transition_width,

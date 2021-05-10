@@ -14,14 +14,7 @@
 
 #include "tags_strobe_impl.h"
 #include <gnuradio/io_signature.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <cstdio>
-#include <iostream>
-#include <stdexcept>
+#include <cstring>
 
 namespace gr {
 namespace blocks {

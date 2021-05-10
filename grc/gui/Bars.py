@@ -70,7 +70,8 @@ MENU_BAR_LIST = [
     ('_View', [
         [Actions.TOGGLE_BLOCKS_WINDOW],
         [Actions.TOGGLE_CONSOLE_WINDOW, Actions.TOGGLE_SCROLL_LOCK, Actions.SAVE_CONSOLE, Actions.CLEAR_CONSOLE],
-        [Actions.TOGGLE_HIDE_VARIABLES, Actions.TOGGLE_FLOW_GRAPH_VAR_EDITOR, Actions.TOGGLE_FLOW_GRAPH_VAR_EDITOR_SIDEBAR],
+        [Actions.TOGGLE_HIDE_VARIABLES, Actions.TOGGLE_FLOW_GRAPH_VAR_EDITOR, Actions.TOGGLE_FLOW_GRAPH_VAR_EDITOR_SIDEBAR,
+            Actions.TOGGLE_SHOW_PARAMETER_EXPRESSION, Actions.TOGGLE_SHOW_PARAMETER_EVALUATION],
         [Actions.TOGGLE_HIDE_DISABLED_BLOCKS, Actions.TOGGLE_AUTO_HIDE_PORT_LABELS, Actions.TOGGLE_SNAP_TO_GRID, Actions.TOGGLE_SHOW_BLOCK_COMMENTS, Actions.TOGGLE_SHOW_BLOCK_IDS,],
         [Actions.TOGGLE_SHOW_CODE_PREVIEW_TAB],
         [Actions.ERRORS_WINDOW_DISPLAY, Actions.FIND_BLOCKS],
@@ -106,18 +107,13 @@ class SubMenuHelper(object):
     def __init__(self):
         self.submenus = {}
 
-    def build_submenu(self, name, obj, set_func):
+    def build_submenu(self, name, parent_obj, obj_idx, obj, set_func):
         # Get the correct helper function
         create_func = getattr(self, "create_{}".format(name))
         # Save the helper functions for rebuilding the menu later
-        self.submenus[name] = (create_func, obj, set_func)
+        self.submenus[name] = (create_func, parent_obj, obj_idx, obj, set_func)
         # Actually build the menu
         set_func(obj, create_func())
-
-    def refresh_submenus(self):
-        for name in self.submenus:
-            create_func, obj, set_func = self.submenus[name]
-            set_func(obj, create_func())
 
     def create_flow_graph_new_type(self):
         """ Different flowgraph types """
@@ -169,7 +165,8 @@ class MenuHelper(SubMenuHelper):
         SubMenuHelper.__init__(self)
 
     def build_menu(self, actions, menu):
-        for item in actions:
+        for idx, item in enumerate(actions):
+            log.debug("build_menu idx, action: %s, %s", idx, item)
             if isinstance(item, tuple):
                 # Create a new submenu
                 parent, child = (item[0], item[1])
@@ -192,7 +189,7 @@ class MenuHelper(SubMenuHelper):
                     # Child is the name of the submenu to create
                     def set_func(obj, menu):
                         obj.set_submenu(menu)
-                    self.build_submenu(child, menuitem, set_func)
+                    self.build_submenu(child, menu, idx, menuitem, set_func)
                 menu.append_item(menuitem)
 
             elif isinstance(item, list):
@@ -209,6 +206,12 @@ class MenuHelper(SubMenuHelper):
                     menuitem.set_icon(Gio.Icon.new_for_string(item.icon_name))
                 menu.append_item(menuitem)
 
+    def refresh_submenus(self):
+        for name in self.submenus:
+            create_func, parent_obj, obj_idx, obj, set_func = self.submenus[name]
+            set_func(obj, create_func())
+            parent_obj.remove(obj_idx)
+            parent_obj.insert_item(obj_idx, obj)
 
 class ToolbarHelper(SubMenuHelper):
     """
@@ -228,7 +231,7 @@ class ToolbarHelper(SubMenuHelper):
         SubMenuHelper.__init__(self)
 
     def build_toolbar(self, actions, current):
-        for item in actions:
+        for idx, item in enumerate(actions):
             if isinstance(item, list):
                 # Toolbar's don't have sections like menus, so call this function
                 #  recursively with the "section" and just append a separator.
@@ -252,7 +255,7 @@ class ToolbarHelper(SubMenuHelper):
                 def set_func(obj, menu):
                     obj.set_menu(Gtk.Menu.new_from_model(menu))
 
-                self.build_submenu(child, button, set_func)
+                self.build_submenu(child, current, idx, button, set_func)
                 current.insert(button, -1)
 
             elif isinstance(item, Actions.Action):
@@ -264,6 +267,10 @@ class ToolbarHelper(SubMenuHelper):
                 button.set_action_name(target)
                 current.insert(button, -1)
 
+    def refresh_submenus(self):
+        for name in self.submenus:
+            create_func, parent_obj, _, obj, set_func = self.submenus[name]
+            set_func(obj, create_func())
 
 class Menu(Gio.Menu, MenuHelper):
     """ Main Menu """

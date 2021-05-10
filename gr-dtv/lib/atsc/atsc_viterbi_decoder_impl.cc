@@ -26,9 +26,12 @@ atsc_viterbi_decoder::sptr atsc_viterbi_decoder::make()
 }
 
 atsc_viterbi_decoder_impl::atsc_viterbi_decoder_impl()
-    : sync_block("dtv_atsc_viterbi_decoder",
-                 io_signature::make(1, 1, sizeof(atsc_soft_data_segment)),
-                 io_signature::make(1, 1, sizeof(atsc_mpeg_packet_rs_encoded)))
+    : sync_block(
+          "dtv_atsc_viterbi_decoder",
+          io_signature::make2(
+              2, 2, sizeof(float) * ATSC_DATA_SEGMENT_LENGTH, sizeof(plinfo)),
+          io_signature::make2(
+              2, 2, sizeof(unsigned char) * ATSC_MPEG_RS_ENCODED_LENGTH, sizeof(plinfo)))
 {
     set_output_multiple(NCODERS);
 
@@ -71,8 +74,10 @@ int atsc_viterbi_decoder_impl::work(int noutput_items,
                                     gr_vector_const_void_star& input_items,
                                     gr_vector_void_star& output_items)
 {
-    const atsc_soft_data_segment* in = (const atsc_soft_data_segment*)input_items[0];
-    atsc_mpeg_packet_rs_encoded* out = (atsc_mpeg_packet_rs_encoded*)output_items[0];
+    auto in = static_cast<const float*>(input_items[0]);
+    auto out = static_cast<unsigned char*>(output_items[0]);
+    auto plin = static_cast<const plinfo*>(input_items[1]);
+    auto plout = static_cast<plinfo*>(output_items[1]);
 
     // The way the fs_checker works ensures we start getting packets
     // starting with a field sync, and out input multiple is set to
@@ -87,12 +92,15 @@ int atsc_viterbi_decoder_impl::work(int noutput_items,
 
     unsigned char out_copy[OUTPUT_SIZE];
 
+    std::vector<tag_t> tags;
     for (int i = 0; i < noutput_items; i += NCODERS) {
         /* Build a continuous symbol buffer for each encoder */
         for (unsigned int encoder = 0; encoder < NCODERS; encoder++)
             for (unsigned int k = 0; k < enco_which_max; k++)
-                symbols[encoder][k] = in[i + (enco_which_syms[encoder][k] / 832)]
-                                          .data[enco_which_syms[encoder][k] % 832];
+                symbols[encoder][k] =
+                    in[(i + (enco_which_syms[encoder][k] / ATSC_DATA_SEGMENT_LENGTH)) *
+                           ATSC_DATA_SEGMENT_LENGTH +
+                       enco_which_syms[encoder][k] % ATSC_DATA_SEGMENT_LENGTH];
 
         /* Now run each of the 12 Viterbi decoders over their subset of
            the input symbols */
@@ -114,12 +122,13 @@ int atsc_viterbi_decoder_impl::work(int noutput_items,
 
         // copy output from contiguous temp buffer into final output
         for (int j = 0; j < NCODERS; j++) {
-            memcpy(&out[i + j].data[0],
-                   &out_copy[j * OUTPUT_SIZE / NCODERS],
+            memcpy(&out[(i + j) * ATSC_MPEG_RS_ENCODED_LENGTH],
+                   &out_copy[j * ATSC_MPEG_RS_ENCODED_LENGTH],
                    ATSC_MPEG_RS_ENCODED_LENGTH * sizeof(out_copy[0]));
 
+            plout[i + j] = plinfo();
             // adjust pipeline info to reflect 12 segment delay
-            plinfo::delay(out[i + j].pli, in[i + j].pli, NCODERS);
+            plinfo::delay(plout[i + j], plin[i + j], NCODERS);
         }
     }
 

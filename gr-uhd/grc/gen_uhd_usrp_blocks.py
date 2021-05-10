@@ -52,9 +52,16 @@ parameters:
 -   id: sync
     label: Sync
     dtype: enum
-    options: [sync, pc_clock, none]
-    option_labels: [Unknown PPS, PC Clock, No Sync]
+    options: [sync, pc_clock, pc_clock_next_pps, gps_time, none]
+    option_labels: [Unknown PPS, PC Clock, PC Clock on Next PPS, GPS Time on Next PPS, No Sync]
     hide: ${'$'}{ 'none' if sync else 'part'}
+-   id: start_time
+    label: Start Time (seconds)
+    dtype: real
+    default: -1.0
+    options: [-1.0]
+    option_labels: [Default]
+    hide: ${'$'}{ 'none' if start_time >= 0.0 else 'part' }
 -   id: clock_rate
     label: Clock Rate (Hz)
     dtype: real
@@ -170,6 +177,22 @@ templates:
         self.${'$'}{id}.set_time_unknown_pps(uhd.time_spec(0))
         ${'%'} elif sync == 'pc_clock':
         self.${'$'}{id}.set_time_now(uhd.time_spec(time.time()), uhd.ALL_MBOARDS)
+        ${'%'} elif sync == 'pc_clock_next_pps':
+        _last_pps_time = self.${'$'}{id}.get_time_last_pps().get_real_secs()
+        # Poll get_time_last_pps() every 50 ms until a change is seen
+        while(self.${'$'}{id}.get_time_last_pps().get_real_secs() == _last_pps_time):
+            time.sleep(0.05)
+        # Set the time to PC time on next PPS
+        self.${'$'}{id}.set_time_next_pps(uhd.time_spec(int(time.time()) + 1.0))
+        # Sleep 1 second to ensure next PPS has come
+        time.sleep(1)
+        ${'%'} elif sync == 'gps_time':
+        # Set the time to GPS time on next PPS
+        # get_mboard_sensor("gps_time") returns just after the PPS edge,
+        # thus add one second and set the time on the next PPS
+        self.${'$'}{id}.set_time_next_pps(uhd.time_spec(self.${'$'}{id}.get_mboard_sensor("gps_time").to_int() + 1.0))
+        # Sleep 1 second to ensure next PPS has come
+        time.sleep(1)
         ${'%'} else:
         # No synchronization enforced.
         ${'%'} endif
@@ -198,11 +221,15 @@ templates:
         self.${'$'}{id}.set_gain(${'$'}{${'gain' + str(n)}}, ${n})
         ${'%'} endif
         ${'%'} endif  # if rx_agc${n} != 'Enabled'
-        ${'%'} if context.get('dc_offs_enb${n}')():
-        self.${'$'}{id}.set_auto_dc_offset(${'$'}{${'dc_offs_enb' + str(n)}}, ${n})
+        ${'%'} if context.get('dc_offs_enb${n}')() in ('auto', 'disabled'):
+        self.${'$'}{id}.set_auto_dc_offset(${'$'}{True if ${'dc_offs_enb' + str(n)} == 'auto' else False}, ${n})
+        ${'%'} elif context.get('dc_offs_enb${n}')() == 'manual':
+        self.${'$'}{id}.set_dc_offset(${'$'}{${'dc_offs' + str(n)}}, ${n})
         ${'%'} endif
-        ${'%'} if context.get('iq_imbal_enb${n}')():
-        self.${'$'}{id}.set_auto_iq_balance(${'$'}{${'iq_imbal_enb' + str(n)}}, ${n})
+        ${'%'} if context.get('iq_imbal_enb${n}')() in ('auto', 'disabled'):
+        self.${'$'}{id}.set_auto_iq_balance(${'$'}{True if ${'iq_imbal_enb' + str(n)} == 'auto' else False}, ${n})
+        ${'%'} elif context.get('iq_imbal_enb${n}')() == 'manual':
+        self.${'$'}{id}.set_iq_balance(${'$'}{${'iq_imbal' + str(n)}}, ${n})
         ${'%'} endif
         % else:
         ${'%'} if context.get('gain_type' + '${n}')() == 'normalized':
@@ -220,6 +247,9 @@ templates:
         ${'%'} endif
         ${'%'} endif  # nchan > n
         % endfor  # for n in range(max_nchan)
+        ${'%'} if start_time() >= 0.0:
+        self.${'$'}{id}.set_start_time(uhd.time_spec(${'$'}{start_time}))
+        ${'%'} endif
     callbacks:
     -   set_samp_rate(${'$'}{samp_rate})
     % for n in range(max_nchan):
@@ -273,6 +303,15 @@ cpp_templates:
       ${'%'} endif
       ${'%'} endif
       % endfor
+      this->${'$'}{id}->set_samp_rate(${'$'}{samp_rate});
+      ${'%'} if sync == 'sync':
+      this->${'$'}{id}->set_time_unknown_pps(::uhd::time_spec_t());
+      ${'%'} elif sync == 'pc_clock':
+      this->${'$'}{id}->set_time_now(::uhd::time_spec_t(time(NULL)), ::uhd::usrp::multi_usrp::ALL_MBOARDS);
+      ${'%'} else:
+      // No synchronization enforced.
+      ${'%'} endif
+
       % for n in range(max_nchan):
       ${'%'} if context.get('nchan')() > ${n}:
       this->${'$'}{id}->set_center_freq(${'$'}{${'center_freq' + str(n)}}, ${n});
@@ -315,13 +354,8 @@ cpp_templates:
       ${'%'} if clock_rate():
       this->${'$'}{id}->set_clock_rate(${'$'}{clock_rate}, ::uhd::usrp::multi_usrp::ALL_MBOARDS);
       ${'%'} endif
-      this->${'$'}{id}->set_samp_rate(${'$'}{samp_rate});
-      ${'%'} if sync == 'sync':
-      this->${'$'}{id}->set_time_unknown_pps(::uhd::time_spec_t());
-      ${'%'} elif sync == 'pc_clock':
-      this->${'$'}{id}->set_time_now(::uhd::time_spec_t(time(NULL)), ::uhd::usrp::multi_usrp::ALL_MBOARDS);
-      ${'%'} else:
-      // No synchronization enforced.
+      ${'%'} if start_time() >= 0.0:
+      this->${'$'}{id}->set_start_time(::uhd::time_spec_t(${'$'}{float(start_time)}));
       ${'%'} endif
     link: ['gnuradio-uhd uhd']
     callbacks:
@@ -511,15 +545,29 @@ PARAMS_TMPL = """
 -   id: dc_offs_enb${n}
     label: 'Ch${n}: Enable DC Offset Correction'
     category: FE Corrections
-    dtype: raw
-    default: '""'
+    dtype: enum
+    options: [default, auto, disabled, manual]
+    option_labels: [Default, Automatic, Disabled, Manual]
     hide: ${'$'}{ 'all' if not nchan > ${n} else 'part'}
+-   id: dc_offs${n}
+    label: 'Ch${n}: DC Offset Correction Value'
+    category: FE Corrections
+    dtype: complex
+    default: 0+0j
+    hide: ${'$'}{ 'all' if not dc_offs_enb${n} == 'manual' else 'part'}
 -   id: iq_imbal_enb${n}
     label: 'Ch${n}: Enable IQ Imbalance Correction'
     category: FE Corrections
-    dtype: raw
-    default: '""'
+    dtype: enum
+    options: [default, auto, disabled, manual]
+    option_labels: [Default, Automatic, Disabled, Manual]
     hide: ${'$'}{ 'all' if not nchan > ${n} else 'part'}
+-   id: iq_imbal${n}
+    label: 'Ch${n}: IQ imbalance Correction Value'
+    category: FE Corrections
+    dtype: complex
+    default: 0+0j
+    hide: ${'$'}{ 'all' if not iq_imbal_enb${n} == 'manual' else 'part'}
 % endif
 """
 

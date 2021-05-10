@@ -15,7 +15,7 @@
 #include "rep_msg_sink_impl.h"
 #include "tag_headers.h"
 #include <gnuradio/io_signature.h>
-#include <boost/make_unique.hpp>
+#include <memory>
 
 namespace gr {
 namespace zeromq {
@@ -58,8 +58,7 @@ rep_msg_sink_impl::~rep_msg_sink_impl() {}
 bool rep_msg_sink_impl::start()
 {
     d_finished = false;
-    d_thread = boost::make_unique<boost::thread>(
-        boost::bind(&rep_msg_sink_impl::readloop, this));
+    d_thread = std::make_unique<boost::thread>([this] { readloop(); });
     return true;
 }
 
@@ -89,10 +88,15 @@ void rep_msg_sink_impl::readloop()
                 // receive data request
                 zmq::message_t request;
 #if USE_NEW_CPPZMQ_SEND_RECV
-                d_socket.recv(request);
+                const bool ok = bool(d_socket.recv(request));
 #else
-                d_socket.recv(&request);
+                const bool ok = d_socket.recv(&request);
 #endif
+                if (!ok) {
+                    // Should not happen, we've checked POLLIN.
+                    GR_LOG_ERROR(d_logger, "Failed to receive message.");
+                    break; // Fall back to re-check d_finished
+                }
 
                 int req_output_items = *(static_cast<int*>(request.data()));
                 if (req_output_items != 1)

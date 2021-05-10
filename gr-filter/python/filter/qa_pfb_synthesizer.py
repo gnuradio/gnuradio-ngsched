@@ -9,7 +9,7 @@
 #
 
 
-from gnuradio import gr, gr_unittest, filter, blocks
+from gnuradio import gr, gr_unittest, fft, filter, blocks
 
 import math
 
@@ -41,7 +41,7 @@ class test_pfb_synthesizer(gr_unittest.TestCase):
             fs / 2,
             fs / 10,
             attenuation_dB=80,
-            window=filter.firdes.WIN_BLACKMAN_hARRIS)
+            window=fft.window.WIN_BLACKMAN_hARRIS)
 
         signals = list()
         freqs = [0, 100, 200, -200, -100]

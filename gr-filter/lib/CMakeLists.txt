@@ -32,8 +32,6 @@ add_library(gnuradio-filter
   fft_filter_ccc_impl.cc
   fft_filter_ccf_impl.cc
   fft_filter_fff_impl.cc
-  mmse_interpolator_cc_impl.cc
-  mmse_interpolator_ff_impl.cc
   mmse_resampler_cc_impl.cc
   mmse_resampler_ff_impl.cc
   hilbert_fc_impl.cc
@@ -50,7 +48,7 @@ add_library(gnuradio-filter
   pfb_decimator_ccf_impl.cc
   pfb_interpolator_ccf_impl.cc
   pfb_synthesizer_ccf_impl.cc
-  rational_resampler_base_impl.cc
+  rational_resampler_impl.cc
   single_pole_iir_filter_cc_impl.cc
   single_pole_iir_filter_ff_impl.cc
 )

@@ -35,10 +35,10 @@ atsc_fs_checker::sptr atsc_fs_checker::make()
 
 atsc_fs_checker_impl::atsc_fs_checker_impl()
     : gr::block("dtv_atsc_fs_checker",
-                io_signature::make(1, 1, sizeof(atsc_soft_data_segment)),
-                io_signature::make(1, 1, sizeof(atsc_soft_data_segment)))
+                io_signature::make(1, 1, ATSC_DATA_SEGMENT_LENGTH * sizeof(float)),
+                io_signature::make2(
+                    2, 2, ATSC_DATA_SEGMENT_LENGTH * sizeof(float), sizeof(plinfo)))
 {
-    gr::configure_default_loggers(d_logger, d_debug_logger, "dtv_atsc_fs_checker");
     reset();
 }
 
@@ -59,8 +59,9 @@ int atsc_fs_checker_impl::general_work(int noutput_items,
                                        gr_vector_const_void_star& input_items,
                                        gr_vector_void_star& output_items)
 {
-    const atsc_soft_data_segment* in = (const atsc_soft_data_segment*)input_items[0];
-    atsc_soft_data_segment* out = (atsc_soft_data_segment*)output_items[0];
+    auto in = static_cast<const float*>(input_items[0]);
+    auto out = static_cast<float*>(output_items[0]);
+    auto out_pl = static_cast<plinfo*>(output_items[1]);
 
     int output_produced = 0;
 
@@ -69,7 +70,8 @@ int atsc_fs_checker_impl::general_work(int noutput_items,
         int errors = 0;
 
         for (int j = 0; j < LENGTH_511 && errors < PN511_ERROR_LIMIT; j++)
-            errors += (in[i].data[j + OFFSET_511] >= 0) ^ atsc_pn511[j];
+            errors +=
+                (in[i * ATSC_DATA_SEGMENT_LENGTH + j + OFFSET_511] >= 0) ^ atsc_pn511[j];
 
         GR_LOG_DEBUG(d_debug_logger,
                      std::string("second PN63 error count = ") + std::to_string(errors));
@@ -78,7 +80,8 @@ int atsc_fs_checker_impl::general_work(int noutput_items,
             // determine if this is field 1 or field 2
             errors = 0;
             for (int j = 0; j < LENGTH_2ND_63; j++)
-                errors += (in[i].data[j + OFFSET_2ND_63] >= 0) ^ atsc_pn63[j];
+                errors += (in[i * ATSC_DATA_SEGMENT_LENGTH + j + OFFSET_2ND_63] >= 0) ^
+                          atsc_pn63[j];
 
             // we should have either field 1 (== PN63) or field 2 (== ~PN63)
             if (errors <= PN63_ERROR_LIMIT) {
@@ -98,15 +101,19 @@ int atsc_fs_checker_impl::general_work(int noutput_items,
 
         if (d_field_num == 1 || d_field_num == 2) { // If we have sync
             // So we copy out current packet data to an output packet and fill its plinfo
-            for (int j = 0; j < ATSC_DATA_SEGMENT_LENGTH; j++)
-                out[output_produced].data[j] = in[i].data[j];
-            out[output_produced].pli.set_regular_seg((d_field_num == 2), d_segment_num);
+            memcpy(&out[output_produced * ATSC_DATA_SEGMENT_LENGTH],
+                   &in[i * ATSC_DATA_SEGMENT_LENGTH],
+                   ATSC_DATA_SEGMENT_LENGTH * sizeof(float));
+
+            plinfo pli_out;
+            pli_out.set_regular_seg((d_field_num == 2), d_segment_num);
+
             d_segment_num++;
             if (d_segment_num > (ATSC_SEGMENTS_PER_DATA_FIELD - 1)) {
                 d_field_num = 0;
                 d_segment_num = 0;
             } else {
-                output_produced++;
+                out_pl[output_produced++] = pli_out;
             }
         }
     }

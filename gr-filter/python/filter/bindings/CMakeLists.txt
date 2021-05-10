@@ -32,8 +32,6 @@ list(APPEND filter_python_files
     mmse_fir_interpolator_ff_python.cc
     mmse_interp_differentiator_cc_python.cc
     mmse_interp_differentiator_ff_python.cc
-    mmse_interpolator_cc_python.cc
-    mmse_interpolator_ff_python.cc
     mmse_resampler_cc_python.cc
     mmse_resampler_ff_python.cc
     pfb_arb_resampler_python.cc
@@ -46,7 +44,7 @@ list(APPEND filter_python_files
     pfb_synthesizer_ccf_python.cc
     pm_remez_python.cc
     polyphase_filterbank_python.cc
-    rational_resampler_base_python.cc
+    rational_resampler_python.cc
     single_pole_iir_python.cc
     single_pole_iir_filter_cc_python.cc
     single_pole_iir_filter_ff_python.cc

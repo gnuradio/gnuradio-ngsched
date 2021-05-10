@@ -17,15 +17,10 @@ set(__INCLUDED_GR_BOOST_CMAKE TRUE)
 set(BOOST_REQUIRED_COMPONENTS
     date_time
     program_options
-    filesystem
     system
     regex
     thread
 )
-
-if(ENABLE_TESTING)
-    list(APPEND BOOST_REQUIRED_COMPONENTS unit_test_framework)
-endif(ENABLE_TESTING)
 
 if(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
     list(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
@@ -73,7 +68,8 @@ set(Boost_ADDITIONAL_VERSIONS
     "1.71.0" "1.71"
 )
 
-find_package(Boost ${GR_BOOST_MIN_VERSION} COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+find_package(Boost ${GR_BOOST_MIN_VERSION} REQUIRED ${BOOST_REQUIRED_COMPONENTS}
+                                           OPTIONAL_COMPONENTS unit_test_framework)
 
 # Boost 1.52 disabled, see https://svn.boost.org/trac/boost/ticket/7669
 # Similar problems with Boost 1.46 and 1.47.

@@ -13,7 +13,6 @@
 #endif
 
 #include "vmcircbuf_mmap_shm_open.h"
-#include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdexcept>
@@ -25,13 +24,13 @@
 #endif
 #include "pagesize.h"
 #include <gnuradio/sys_paths.h>
-#include <errno.h>
-#include <stdio.h>
 #include <boost/format.hpp>
+#include <cerrno>
+#include <cstdio>
 
 namespace gr {
 
-vmcircbuf_mmap_shm_open::vmcircbuf_mmap_shm_open(int size) : gr::vmcircbuf(size)
+vmcircbuf_mmap_shm_open::vmcircbuf_mmap_shm_open(size_t size) : gr::vmcircbuf(size)
 {
 #if !defined(HAVE_MMAP) || !defined(HAVE_SHM_OPEN)
     std::stringstream error_msg;
@@ -179,7 +178,7 @@ gr::vmcircbuf_factory* vmcircbuf_mmap_shm_open_factory::singleton()
 
 int vmcircbuf_mmap_shm_open_factory::granularity() { return gr::pagesize(); }
 
-gr::vmcircbuf* vmcircbuf_mmap_shm_open_factory::make(int size)
+gr::vmcircbuf* vmcircbuf_mmap_shm_open_factory::make(size_t size)
 {
     try {
         return new vmcircbuf_mmap_shm_open(size);

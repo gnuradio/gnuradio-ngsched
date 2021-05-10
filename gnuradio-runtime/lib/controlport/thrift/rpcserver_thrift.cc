@@ -23,9 +23,13 @@
 
 using namespace rpcpmtconverter;
 
+gr::logger_ptr rpcserver_thrift::d_logger;
+gr::logger_ptr rpcserver_thrift::d_debug_logger;
+
+
 rpcserver_thrift::rpcserver_thrift()
 {
-    gr::configure_default_loggers(logger, debug_logger, "rpcserver_thrift");
+    gr::configure_default_loggers(d_logger, d_debug_logger, "rpcserver_thrift");
     // std::cerr << "rpcserver_thrift::ctor" ;
 }
 
@@ -180,7 +184,7 @@ void rpcserver_thrift::getKnobs(GNURadio::KnobMap& _return,
                                 const GNURadio::KnobIDList& knobs)
 {
     boost::mutex::scoped_lock lock(d_callback_map_lock);
-    if (knobs.size() == 0) {
+    if (knobs.empty()) {
         std::for_each(d_getcallbackmap.begin(),
                       d_getcallbackmap.end(),
                       get_all_f<QueryCallbackMap_t::value_type,
@@ -198,7 +202,7 @@ void rpcserver_thrift::getRe(GNURadio::KnobMap& _return,
                              const GNURadio::KnobIDList& knobs)
 {
     boost::mutex::scoped_lock lock(d_callback_map_lock);
-    if (knobs.size() == 0) {
+    if (knobs.empty()) {
         std::for_each(d_getcallbackmap.begin(),
                       d_getcallbackmap.end(),
                       get_all_f<QueryCallbackMap_t::value_type,
@@ -224,7 +228,7 @@ void rpcserver_thrift::properties(GNURadio::KnobPropMap& _return,
                                   const GNURadio::KnobIDList& knobs)
 {
     boost::mutex::scoped_lock lock(d_callback_map_lock);
-    if (knobs.size() == 0) {
+    if (knobs.empty()) {
         std::for_each(
             d_getcallbackmap.begin(),
             d_getcallbackmap.end(),
@@ -273,7 +277,7 @@ void rpcserver_thrift::shutdown()
 {
     if (DEBUG) {
         std::ostringstream msg;
-        msg << "shutting down... " << id;
+        msg << "shutting down rpcserver_thrift... ";
         GR_LOG_INFO(d_debug_logger, msg.str());
     }
 }

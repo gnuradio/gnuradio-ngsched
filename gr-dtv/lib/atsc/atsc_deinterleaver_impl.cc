@@ -25,9 +25,12 @@ atsc_deinterleaver::sptr atsc_deinterleaver::make()
 }
 
 atsc_deinterleaver_impl::atsc_deinterleaver_impl()
-    : gr::sync_block("atsc_deinterleaver",
-                     io_signature::make(1, 1, sizeof(atsc_mpeg_packet_rs_encoded)),
-                     io_signature::make(1, 1, sizeof(atsc_mpeg_packet_rs_encoded))),
+    : gr::sync_block(
+          "atsc_deinterleaver",
+          io_signature::make2(
+              2, 2, ATSC_MPEG_RS_ENCODED_LENGTH * sizeof(uint8_t), sizeof(plinfo)),
+          io_signature::make2(
+              2, 2, ATSC_MPEG_RS_ENCODED_LENGTH * sizeof(uint8_t), sizeof(plinfo))),
       alignment_fifo(156)
 {
     m_fifo.reserve(s_interleavers);
@@ -52,24 +55,27 @@ int atsc_deinterleaver_impl::work(int noutput_items,
                                   gr_vector_const_void_star& input_items,
                                   gr_vector_void_star& output_items)
 {
-    const atsc_mpeg_packet_rs_encoded* in =
-        (const atsc_mpeg_packet_rs_encoded*)input_items[0];
-    atsc_mpeg_packet_rs_encoded* out = (atsc_mpeg_packet_rs_encoded*)output_items[0];
+    auto in = static_cast<const uint8_t*>(input_items[0]);
+    auto out = static_cast<uint8_t*>(output_items[0]);
+    auto plin = static_cast<const plinfo*>(input_items[1]);
+    auto plout = static_cast<plinfo*>(output_items[1]);
+
 
     for (int i = 0; i < noutput_items; i++) {
-        assert(in[i].pli.regular_seg_p());
-        plinfo::sanity_check(in[i].pli);
+        assert(plin[i].regular_seg_p());
 
         // reset commutator if required using INPUT pipeline info
-        if (in[i].pli.first_regular_seg_p())
+        if (plin[i].first_regular_seg_p())
             sync();
 
         // remap OUTPUT pipeline info to reflect all data segment end-to-end delay
-        plinfo::delay(out[i].pli, in[i].pli, s_interleavers);
+        plout[i] = plinfo();
+        plinfo::delay(plout[i], plin[i], s_interleavers);
 
         // now do the actual deinterleaving
-        for (unsigned int j = 0; j < sizeof(in[i].data); j++) {
-            out[i].data[j] = alignment_fifo.stuff(transform(in[i].data[j]));
+        for (unsigned int j = 0; j < ATSC_MPEG_RS_ENCODED_LENGTH; j++) {
+            out[i * ATSC_MPEG_RS_ENCODED_LENGTH + j] =
+                alignment_fifo.stuff(transform(in[i * ATSC_MPEG_RS_ENCODED_LENGTH + j]));
         }
     }
 

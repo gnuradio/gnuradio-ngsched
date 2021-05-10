@@ -13,8 +13,8 @@
 /* If manual edits are made, the following tags should be modified accordingly.    */
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
-/* BINDTOOL_HEADER_FILE(lfsr.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(a9c9bd5cfce2d712fcbd9401773e8621)                     */
+/* BINDTOOL_HEADER_FILE(lfsr.h)                                                    */
+/* BINDTOOL_HEADER_FILE_HASH(ae0c3aeb06a21a60a4415fe89135120e)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -35,7 +35,7 @@ void bind_lfsr(py::module& m)
 
     py::class_<lfsr, std::shared_ptr<lfsr>>(m, "lfsr", D(lfsr))
 
-        .def(py::init<uint32_t, uint32_t, uint32_t>(),
+        .def(py::init<uint64_t, uint64_t, uint32_t>(),
              py::arg("mask"),
              py::arg("seed"),
              py::arg("reg_len"),

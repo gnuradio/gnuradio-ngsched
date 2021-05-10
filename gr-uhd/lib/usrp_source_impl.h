@@ -11,7 +11,12 @@
 #include "usrp_block_impl.h"
 #include <gnuradio/uhd/usrp_source.h>
 #include <uhd/convert.hpp>
-#include <boost/thread/mutex.hpp>
+#include <algorithm>
+#include <chrono>
+#include <complex>
+#include <mutex>
+#include <string>
+#include <vector>
 
 static const pmt::pmt_t TIME_KEY = pmt::string_to_symbol("rx_time");
 static const pmt::pmt_t RATE_KEY = pmt::string_to_symbol("rx_rate");
@@ -66,13 +71,17 @@ public:
     bool get_lo_export_enabled(const std::string& name, size_t chan) override;
     double get_lo_freq(const std::string& name, size_t chan) override;
     ::uhd::freq_range_t get_lo_freq_range(const std::string& name, size_t chan) override;
+    std::vector<std::string> get_filter_names(const size_t chan) override;
+    ::uhd::filter_info_base::sptr get_filter(const std::string& path,
+                                             const size_t chan) override;
 
     // Set Commands
     void set_subdev_spec(const std::string& spec, size_t mboard) override;
     void set_samp_rate(double rate) override;
     ::uhd::tune_result_t set_center_freq(const ::uhd::tune_request_t tune_request,
                                          size_t chan) override;
-    void set_gain(double gain, size_t chan) override;
+    void
+    set_gain(double gain, size_t chan = 0, pmt::pmt_t direction = pmt::PMT_NIL) override;
     void set_gain(double gain, const std::string& name, size_t chan) override;
     void set_rx_agc(const bool enable, size_t chan) override;
     void set_normalized_gain(double gain, size_t chan) override;
@@ -94,6 +103,9 @@ public:
                                const std::string& name = ALL_LOS,
                                size_t chan = 0) override;
     double set_lo_freq(double freq, const std::string& name, size_t chan) override;
+    void set_filter(const std::string& path,
+                    ::uhd::filter_info_base::sptr filter,
+                    const size_t chan) override;
 
     void issue_stream_cmd(const ::uhd::stream_cmd_t& cmd) override;
     void set_recv_timeout(const double timeout, const bool one_packet) override;
@@ -126,11 +138,16 @@ private:
     ::uhd::rx_metadata_t _metadata;
     pmt::pmt_t _id;
     bool _issue_stream_cmd_on_start;
+    std::chrono::time_point<std::chrono::steady_clock> _last_log;
+    unsigned int _overflow_count;
+    std::chrono::milliseconds _overflow_log_interval;
 
     // tag shadows
     double _samp_rate;
 
-    boost::recursive_mutex d_mutex;
+    std::recursive_mutex d_mutex;
+
+    const pmt::pmt_t _direction() const override { return direction_rx(); };
 };
 
 } /* namespace uhd */

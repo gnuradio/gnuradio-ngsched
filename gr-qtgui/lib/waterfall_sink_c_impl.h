@@ -43,19 +43,25 @@ private:
     const pmt::pmt_t d_port;
     const pmt::pmt_t d_port_bw;
 
-    bool d_shift;
-    fft::fft_complex_fwd* d_fft;
+    // Perform fftshift operation;
+    // this is usually desired when plotting
+    std::unique_ptr<fft::fft_complex_fwd> d_fft;
 
-    int d_index;
-    std::vector<gr_complex*> d_residbufs;
-    std::vector<double*> d_magbufs;
+    int d_index = 0;
+    std::vector<volk::vector<gr_complex>> d_residbufs;
+    std::vector<volk::vector<double>> d_magbufs;
     double* d_pdu_magbuf;
-    float* d_fbuf;
+    volk::vector<float> d_fbuf;
 
-    int d_argc;
-    char* d_argv;
+    // Required now for Qt; argc must be greater than 0 and argv
+    // must have at least one valid character. Must be valid through
+    // life of the qApplication:
+    // http://harmattan-dev.nokia.com/docs/library/html/qt4/qapplication.html
+    char d_zero = 0;
+    int d_argc = 1;
+    char* d_argv = &d_zero;
     QWidget* d_parent;
-    WaterfallDisplayForm* d_main_gui;
+    WaterfallDisplayForm* d_main_gui = nullptr;
 
     gr::high_res_timer_type d_update_time;
     gr::high_res_timer_type d_last_time;
@@ -63,6 +69,7 @@ private:
     void windowreset();
     void buildwindow();
     void fftresize();
+    void resize_bufs(int size);
     void check_clicked();
     void fft(float* data_out, const gr_complex* data_in, int size);
 

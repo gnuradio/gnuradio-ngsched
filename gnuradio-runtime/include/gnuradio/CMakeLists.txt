@@ -45,11 +45,11 @@ install(FILES
   msg_handler.h
   msg_queue.h
   nco.h
+  pdu.h
   prefs.h
   pycallback_object.h
   random.h
   realtime.h
-  realtime_impl.h
   runtime_types.h
   tags.h
   tagged_stream_block.h
@@ -73,6 +73,7 @@ install(FILES
   rpcserver_booter_aggregator.h
   rpcserver_booter_base.h
   rpcserver_selector.h
+  xoroshiro128p.h
   DESTINATION ${GR_INCLUDE_DIR}/gnuradio
 )
 

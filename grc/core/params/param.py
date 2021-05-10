@@ -156,7 +156,7 @@ class Param(Element):
         validator = dtypes.validators.get(self.dtype, None)
         if self._init and validator:
             try:
-                validator(self)
+                validator(self,self.parent_flowgraph.get_imported_names())
             except dtypes.ValidateError as e:
                 self.add_error_message(str(e))
 
@@ -392,7 +392,10 @@ class Param(Element):
             else:
                 layout = '{tab}_grid_layout_{index}'.format(tab=tab, index=index)
         else:
-            layout = 'top_grid_layout'
+            if not pos:
+                layout = 'top_layout'
+            else:
+                layout = 'top_grid_layout'
 
         widget = '%s'  # to be fill-out in the mail template
 

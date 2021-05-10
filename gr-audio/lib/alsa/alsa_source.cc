@@ -17,7 +17,7 @@
 #include "alsa_source.h"
 #include <gnuradio/io_signature.h>
 #include <gnuradio/prefs.h>
-#include <stdio.h>
+#include <cstdio>
 #include <iostream>
 #include <stdexcept>
 
@@ -54,7 +54,7 @@ static double default_period_time()
 
 static int default_nperiods()
 {
-    return std::max(2L, prefs::singleton()->get_long("audio_alsa", "nperiods", 4));
+    return std::max(2L, prefs::singleton()->get_long("audio_alsa", "nperiods", 32));
 }
 
 // ----------------------------------------------------------------

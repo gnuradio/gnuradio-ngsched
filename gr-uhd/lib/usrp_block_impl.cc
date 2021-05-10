@@ -9,11 +9,15 @@
  */
 
 #include "usrp_block_impl.h"
-#include <boost/make_shared.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace gr::uhd;
+using namespace std::chrono_literals;
 
-const double usrp_block_impl::LOCK_TIMEOUT = 1.5;
+namespace {
+constexpr auto LOCK_TIMEOUT = 1.5s;
+}
 
 /**********************************************************************
  * Structors
@@ -54,6 +58,11 @@ const pmt::pmt_t gr::uhd::cmd_lo_offset_key()
 const pmt::pmt_t gr::uhd::cmd_tune_key()
 {
     static const pmt::pmt_t val = pmt::mp("tune");
+    return val;
+}
+const pmt::pmt_t gr::uhd::cmd_mtune_key()
+{
+    static const pmt::pmt_t val = pmt::mp("mtune");
     return val;
 }
 const pmt::pmt_t gr::uhd::cmd_lo_freq_key()
@@ -101,13 +110,24 @@ const pmt::pmt_t gr::uhd::cmd_tag_key()
     static const pmt::pmt_t val = pmt::mp("tag");
     return val;
 }
+const pmt::pmt_t gr::uhd::cmd_pc_clock_resync_key()
+{
+    static const pmt::pmt_t val = pmt::mp("pc_clock_resync");
+    return val;
+}
 
-const pmt::pmt_t gr::uhd::ant_direction_rx()
+const pmt::pmt_t gr::uhd::cmd_gpio_key()
+{
+    static const pmt::pmt_t val = pmt::mp("gpio");
+    return val;
+}
+
+const pmt::pmt_t gr::uhd::direction_rx()
 {
     static const pmt::pmt_t val = pmt::mp("RX");
     return val;
 }
-const pmt::pmt_t gr::uhd::ant_direction_tx()
+const pmt::pmt_t gr::uhd::direction_tx()
 {
     static const pmt::pmt_t val = pmt::mp("TX");
     return val;
@@ -120,8 +140,11 @@ usrp_block_impl::usrp_block_impl(const ::uhd::device_addr_t& device_addr,
       _nchan(stream_args.channels.size()),
       _stream_now(_nchan == 1 and ts_tag_name.empty()),
       _start_time_set(false),
-      _curr_tune_req(stream_args.channels.size(), ::uhd::tune_request_t()),
-      _chans_to_tune(stream_args.channels.size())
+      _force_tune(false),
+      _curr_tx_tune_req(stream_args.channels.size(), ::uhd::tune_request_t()),
+      _curr_rx_tune_req(stream_args.channels.size(), ::uhd::tune_request_t()),
+      _tx_chans_to_tune(stream_args.channels.size()),
+      _rx_chans_to_tune(stream_args.channels.size())
 {
     _dev = ::uhd::usrp::multi_usrp::make(device_addr);
 
@@ -133,20 +156,25 @@ usrp_block_impl::usrp_block_impl(const ::uhd::device_addr_t& device_addr,
                     [this](pmt::pmt_t msg) { this->msg_handler_command(msg); });
 
 // cuz we lazy:
-#define REGISTER_CMD_HANDLER(key, _handler) \
-    register_msg_cmd_handler(key,           \
-                             boost::bind(&usrp_block_impl::_handler, this, _1, _2, _3))
+#define REGISTER_CMD_HANDLER(key, _handler)                                   \
+    register_msg_cmd_handler(                                                 \
+        key, [this](const pmt::pmt_t& var, int chan, const pmt::pmt_t& msg) { \
+            this->_handler(var, chan, msg);                                   \
+        })
     // Register default command handlers:
     REGISTER_CMD_HANDLER(cmd_freq_key(), _cmd_handler_freq);
     REGISTER_CMD_HANDLER(cmd_gain_key(), _cmd_handler_gain);
     REGISTER_CMD_HANDLER(cmd_power_key(), _cmd_handler_power);
     REGISTER_CMD_HANDLER(cmd_lo_offset_key(), _cmd_handler_looffset);
     REGISTER_CMD_HANDLER(cmd_tune_key(), _cmd_handler_tune);
+    REGISTER_CMD_HANDLER(cmd_mtune_key(), _cmd_handler_mtune);
     REGISTER_CMD_HANDLER(cmd_lo_freq_key(), _cmd_handler_lofreq);
     REGISTER_CMD_HANDLER(cmd_dsp_freq_key(), _cmd_handler_dspfreq);
     REGISTER_CMD_HANDLER(cmd_rate_key(), _cmd_handler_rate);
     REGISTER_CMD_HANDLER(cmd_bandwidth_key(), _cmd_handler_bw);
     REGISTER_CMD_HANDLER(cmd_antenna_key(), _cmd_handler_antenna);
+    REGISTER_CMD_HANDLER(cmd_gpio_key(), _cmd_handler_gpio);
+    REGISTER_CMD_HANDLER(cmd_pc_clock_resync_key(), _cmd_handler_pc_clock_resync);
 }
 
 usrp_block_impl::~usrp_block_impl()
@@ -176,36 +204,23 @@ bool usrp_block_impl::_wait_for_locked_sensor(std::vector<std::string> sensor_na
                                               get_sensor_fn_t get_sensor_fn)
 {
     if (std::find(sensor_names.begin(), sensor_names.end(), sensor_name) ==
-        sensor_names.end())
+        sensor_names.end()) {
         return true;
-
-    boost::system_time start = boost::get_system_time();
-    boost::system_time first_lock_time;
-
-    while (true) {
-        if ((not first_lock_time.is_not_a_date_time()) and
-            (boost::get_system_time() >
-             (first_lock_time +
-              boost::posix_time::seconds(static_cast<long>(LOCK_TIMEOUT))))) {
-            break;
-        }
-
-        if (get_sensor_fn(sensor_name).to_bool()) {
-            if (first_lock_time.is_not_a_date_time())
-                first_lock_time = boost::get_system_time();
-        } else {
-            first_lock_time = boost::system_time(); // reset to 'not a date time'
-
-            if (boost::get_system_time() >
-                (start + boost::posix_time::seconds(static_cast<long>(LOCK_TIMEOUT)))) {
-                return false;
-            }
-        }
-
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
     }
 
-    return true;
+    const auto start = std::chrono::steady_clock::now();
+    const auto timeout = start + LOCK_TIMEOUT;
+
+    while (std::chrono::steady_clock::now() < timeout) {
+        if (get_sensor_fn(sensor_name).to_bool()) {
+            return true;
+        }
+
+        std::this_thread::sleep_for(100ms);
+    }
+
+    // One last try:
+    return get_sensor_fn(sensor_name).to_bool();
 }
 
 bool usrp_block_impl::_unpack_chan_command(std::string& command,
@@ -251,11 +266,13 @@ bool usrp_block_impl::_check_mboard_sensors_locked()
         } else if (_dev->get_clock_source(mboard_index) == "mimo") {
             sensor_name = "mimo_locked";
         }
-        if (not _wait_for_locked_sensor(
-                get_mboard_sensor_names(mboard_index),
-                sensor_name,
-                boost::bind(
-                    &usrp_block_impl::get_mboard_sensor, this, _1, mboard_index))) {
+        if (not _wait_for_locked_sensor(get_mboard_sensor_names(mboard_index),
+                                        sensor_name,
+                                        [this, mboard_index](const std::string& name) {
+                                            return static_cast<::uhd::sensor_value_t>(
+                                                this->get_mboard_sensor(name,
+                                                                        mboard_index));
+                                        })) {
             GR_LOG_WARN(
                 d_logger,
                 boost::format(
@@ -268,11 +285,21 @@ bool usrp_block_impl::_check_mboard_sensors_locked()
     return clocks_locked;
 }
 
-void usrp_block_impl::_set_center_freq_from_internals_allchans(pmt::pmt_t direction)
+void usrp_block_impl::_set_center_freq_from_internals_allchans()
 {
-    while (_chans_to_tune.any()) {
+    unsigned int chan;
+    while (_rx_chans_to_tune.any()) {
         // This resets() bits, so this loop should not run indefinitely
-        _set_center_freq_from_internals(_chans_to_tune.find_first(), direction);
+        chan = _rx_chans_to_tune.find_first();
+        _set_center_freq_from_internals(chan, direction_rx());
+        _rx_chans_to_tune.reset(chan);
+    }
+
+    while (_tx_chans_to_tune.any()) {
+        // This resets() bits, so this loop should not run indefinitely
+        chan = _tx_chans_to_tune.find_first();
+        _set_center_freq_from_internals(chan, direction_tx());
+        _tx_chans_to_tune.reset(chan);
     }
 }
 
@@ -343,50 +370,14 @@ void usrp_block_impl::set_clock_rate(double rate, size_t mboard)
 
 std::vector<std::string> usrp_block_impl::get_gpio_banks(const size_t mboard)
 {
-#ifdef UHD_USRP_MULTI_USRP_GPIO_API
     return _dev->get_gpio_banks(mboard);
-#else
-    throw std::runtime_error("not implemented in this version");
-#endif
 }
 
-boost::uint32_t usrp_block_impl::get_gpio_attr(const std::string& bank,
-                                               const std::string& attr,
-                                               const size_t mboard)
+uint32_t usrp_block_impl::get_gpio_attr(const std::string& bank,
+                                        const std::string& attr,
+                                        const size_t mboard)
 {
-#ifdef UHD_USRP_MULTI_USRP_GPIO_API
-    return _dev->get_gpio_attr(bank, attr, mboard);
-#else
     throw std::runtime_error("not implemented in this version");
-#endif
-}
-
-std::vector<std::string> usrp_block_impl::get_filter_names(const std::string& search_mask)
-{
-#ifdef UHD_USRP_MULTI_FILTER_API
-    return _dev->get_filter_names(search_mask);
-#else
-    throw std::runtime_error("not implemented in this version");
-#endif
-}
-
-::uhd::filter_info_base::sptr usrp_block_impl::get_filter(const std::string& path)
-{
-#ifdef UHD_USRP_MULTI_FILTER_API
-    return _dev->get_filter(path);
-#else
-    throw std::runtime_error("not implemented in this version");
-#endif
-}
-
-void usrp_block_impl::set_filter(const std::string& path,
-                                 ::uhd::filter_info_base::sptr filter)
-{
-#ifdef UHD_USRP_MULTI_FILTER_API
-    _dev->set_filter(path, filter);
-#else
-    throw std::runtime_error("not implemented in this version");
-#endif
 }
 
 void usrp_block_impl::set_time_now(const ::uhd::time_spec_t& time_spec, size_t mboard)
@@ -423,15 +414,11 @@ void usrp_block_impl::set_user_register(const uint8_t addr,
 
 void usrp_block_impl::set_gpio_attr(const std::string& bank,
                                     const std::string& attr,
-                                    const boost::uint32_t value,
-                                    const boost::uint32_t mask,
+                                    const uint32_t value,
+                                    const uint32_t mask,
                                     const size_t mboard)
 {
-#ifdef UHD_USRP_MULTI_USRP_GPIO_API
     return _dev->set_gpio_attr(bank, attr, value, mask, mboard);
-#else
-    throw std::runtime_error("not implemented in this version");
-#endif
 }
 
 ::uhd::usrp::multi_usrp::sptr usrp_block_impl::get_device(void) { return _dev; }
@@ -540,7 +527,10 @@ void usrp_block_impl::msg_handler_command(pmt::pmt_t msg)
                                               pmt::from_long(-1) // Default to all chans
                                               )));
 
-    /// 3) Loop through all the values
+    /// 3) If a direction key was specified, force the block to tune - see issue #1814
+    _force_tune = pmt::dict_has_key(msg, cmd_direction_key());
+
+    /// 4) Loop through all the values
     GR_LOG_DEBUG(d_debug_logger, boost::format("Processing command message %s") % msg);
     pmt::pmt_t msg_items = pmt::dict_items(msg);
     for (size_t i = 0; i < pmt::length(msg_items); i++) {
@@ -558,16 +548,9 @@ void usrp_block_impl::msg_handler_command(pmt::pmt_t msg)
         }
     }
 
-    /// 4) See if a direction was specified
-    pmt::pmt_t direction =
-        pmt::dict_ref(msg,
-                      cmd_direction_key(),
-                      pmt::PMT_NIL // Anything except "TX" or "RX will default to the
-                                   // messaged block direction"
-        );
-
     /// 5) Check if we need to re-tune
-    _set_center_freq_from_internals_allchans(direction);
+    _set_center_freq_from_internals_allchans();
+    _force_tune = false;
 }
 
 
@@ -587,22 +570,37 @@ void usrp_block_impl::register_msg_cmd_handler(const pmt::pmt_t& cmd,
     _msg_cmd_handlers[cmd] = handler;
 }
 
-void usrp_block_impl::_update_curr_tune_req(::uhd::tune_request_t& tune_req, int chan)
+void usrp_block_impl::_update_curr_tune_req(::uhd::tune_request_t& tune_req,
+                                            int chan,
+                                            pmt::pmt_t direction)
 {
     if (chan == -1) {
         for (size_t i = 0; i < _nchan; i++) {
-            _update_curr_tune_req(tune_req, int(i));
+            _update_curr_tune_req(tune_req, int(i), direction);
         }
         return;
     }
 
-    if (tune_req.target_freq != _curr_tune_req[chan].target_freq ||
-        tune_req.rf_freq_policy != _curr_tune_req[chan].rf_freq_policy ||
-        tune_req.rf_freq != _curr_tune_req[chan].rf_freq ||
-        tune_req.dsp_freq != _curr_tune_req[chan].dsp_freq ||
-        tune_req.dsp_freq_policy != _curr_tune_req[chan].dsp_freq_policy) {
-        _curr_tune_req[chan] = tune_req;
-        _chans_to_tune.set(chan);
+    if (pmt::eqv(direction, direction_rx())) {
+        if (tune_req.target_freq != _curr_rx_tune_req[chan].target_freq ||
+            tune_req.rf_freq_policy != _curr_rx_tune_req[chan].rf_freq_policy ||
+            tune_req.rf_freq != _curr_rx_tune_req[chan].rf_freq ||
+            tune_req.dsp_freq != _curr_rx_tune_req[chan].dsp_freq ||
+            tune_req.dsp_freq_policy != _curr_rx_tune_req[chan].dsp_freq_policy ||
+            _force_tune) {
+            _curr_rx_tune_req[chan] = tune_req;
+            _rx_chans_to_tune.set(chan);
+        }
+    } else {
+        if (tune_req.target_freq != _curr_tx_tune_req[chan].target_freq ||
+            tune_req.rf_freq_policy != _curr_tx_tune_req[chan].rf_freq_policy ||
+            tune_req.rf_freq != _curr_tx_tune_req[chan].rf_freq ||
+            tune_req.dsp_freq != _curr_tx_tune_req[chan].dsp_freq ||
+            tune_req.dsp_freq_policy != _curr_tx_tune_req[chan].dsp_freq_policy ||
+            _force_tune) {
+            _curr_tx_tune_req[chan] = tune_req;
+            _tx_chans_to_tune.set(chan);
+        }
     }
 }
 
@@ -611,48 +609,63 @@ void usrp_block_impl::_cmd_handler_freq(const pmt::pmt_t& freq_,
                                         int chan,
                                         const pmt::pmt_t& msg)
 {
+    // Get the direction key
+    const pmt::pmt_t direction = get_cmd_or_default_direction(msg);
+
     double freq = pmt::to_double(freq_);
-    ::uhd::tune_request_t new_tune_reqest(freq);
+    ::uhd::tune_request_t new_tune_request(freq);
     if (pmt::dict_has_key(msg, cmd_lo_offset_key())) {
         double lo_offset =
             pmt::to_double(pmt::dict_ref(msg, cmd_lo_offset_key(), pmt::PMT_NIL));
-        new_tune_reqest = ::uhd::tune_request_t(freq, lo_offset);
+        new_tune_request = ::uhd::tune_request_t(freq, lo_offset);
     }
 
-    _update_curr_tune_req(new_tune_reqest, chan);
+    _update_curr_tune_req(new_tune_request, chan, direction);
 }
 
 void usrp_block_impl::_cmd_handler_looffset(const pmt::pmt_t& lo_offset,
                                             int chan,
                                             const pmt::pmt_t& msg)
 {
+    // Get the direction key
+    const pmt::pmt_t direction = get_cmd_or_default_direction(msg);
+
     if (pmt::dict_has_key(msg, cmd_freq_key())) {
         // Then it's already taken care of
         return;
     }
 
     double lo_offs = pmt::to_double(lo_offset);
-    ::uhd::tune_request_t new_tune_request = _curr_tune_req[chan];
+    ::uhd::tune_request_t new_tune_request;
+    if (pmt::eqv(direction, direction_rx())) {
+        new_tune_request = _curr_rx_tune_req[chan];
+    } else {
+        new_tune_request = _curr_tx_tune_req[chan];
+    }
+
     new_tune_request.rf_freq = new_tune_request.target_freq + lo_offs;
     new_tune_request.rf_freq_policy = ::uhd::tune_request_t::POLICY_MANUAL;
     new_tune_request.dsp_freq_policy = ::uhd::tune_request_t::POLICY_AUTO;
 
-    _update_curr_tune_req(new_tune_request, chan);
+    _update_curr_tune_req(new_tune_request, chan, direction);
 }
 
 void usrp_block_impl::_cmd_handler_gain(const pmt::pmt_t& gain_,
                                         int chan,
                                         const pmt::pmt_t& msg)
 {
+    // Get the direction key
+    const pmt::pmt_t direction = get_cmd_or_default_direction(msg);
+
     double gain = pmt::to_double(gain_);
     if (chan == -1) {
         for (size_t i = 0; i < _nchan; i++) {
-            set_gain(gain, i);
+            set_gain(gain, i, direction);
         }
         return;
     }
 
-    set_gain(gain, chan);
+    set_gain(gain, chan, direction);
 }
 
 void usrp_block_impl::_cmd_handler_power(const pmt::pmt_t& power_dbm_,
@@ -685,20 +698,121 @@ void usrp_block_impl::_cmd_handler_antenna(const pmt::pmt_t& ant,
     set_antenna(antenna, chan);
 }
 
+void usrp_block_impl::_cmd_handler_gpio(const pmt::pmt_t& gpio_attr,
+                                        int chan,
+                                        const pmt::pmt_t& msg)
+{
+    size_t mboard = pmt::to_long(pmt::dict_ref(
+        msg,
+        cmd_mboard_key(),
+        // pmt::from_long(::uhd::usrp::multi_usrp::ALL_MBOARDS) // Default to all mboards
+        pmt::from_long(0) // default to first mboard
+        ));
+
+    if (!pmt::is_dict(gpio_attr)) {
+        GR_LOG_ERROR(d_logger,
+                     boost::format("gpio_attr in  message is neither dict nor pair: %s") %
+                         gpio_attr);
+        return;
+    }
+    if (!pmt::dict_has_key(gpio_attr, pmt::mp("bank")) ||
+        !pmt::dict_has_key(gpio_attr, pmt::mp("attr")) ||
+        !pmt::dict_has_key(gpio_attr, pmt::mp("value")) ||
+        !pmt::dict_has_key(gpio_attr, pmt::mp("mask"))) {
+        GR_LOG_ERROR(
+            d_logger,
+            boost::format("gpio_attr message must include bank, attr, value and mask"));
+        return;
+    }
+    std::string bank =
+        pmt::symbol_to_string(pmt::dict_ref(gpio_attr, pmt::mp("bank"), pmt::mp("")));
+    std::string attr =
+        pmt::symbol_to_string(pmt::dict_ref(gpio_attr, pmt::mp("attr"), pmt::mp("")));
+    uint32_t value = pmt::to_double(pmt::dict_ref(gpio_attr, pmt::mp("value"), 0));
+    uint32_t mask = pmt::to_double(pmt::dict_ref(gpio_attr, pmt::mp("mask"), 0));
+
+    set_gpio_attr(bank, attr, value, mask, mboard);
+}
+
 void usrp_block_impl::_cmd_handler_rate(const pmt::pmt_t& rate_, int, const pmt::pmt_t&)
 {
     const double rate = pmt::to_double(rate_);
     set_samp_rate(rate);
 }
 
+void usrp_block_impl::_cmd_handler_pc_clock_resync(const pmt::pmt_t&,
+                                                   int,
+                                                   const pmt::pmt_t&)
+{
+    const uint64_t ticks =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch())
+            .count();
+    const ::uhd::time_spec_t& time_spec = ::uhd::time_spec_t::from_ticks(ticks, 1.0e9);
+    set_time_now(time_spec, ::uhd::usrp::multi_usrp::ALL_MBOARDS);
+}
+
 void usrp_block_impl::_cmd_handler_tune(const pmt::pmt_t& tune,
                                         int chan,
                                         const pmt::pmt_t& msg)
 {
+    // Get the direction key
+    const pmt::pmt_t direction = get_cmd_or_default_direction(msg);
+
     double freq = pmt::to_double(pmt::car(tune));
     double lo_offset = pmt::to_double(pmt::cdr(tune));
-    ::uhd::tune_request_t new_tune_reqest(freq, lo_offset);
-    _update_curr_tune_req(new_tune_reqest, chan);
+    ::uhd::tune_request_t new_tune_request(freq, lo_offset);
+    _update_curr_tune_req(new_tune_request, chan, direction);
+}
+
+void usrp_block_impl::_cmd_handler_mtune(const pmt::pmt_t& tune,
+                                         int chan,
+                                         const pmt::pmt_t& msg)
+{
+    // Get the direction key
+    const pmt::pmt_t direction = get_cmd_or_default_direction(msg);
+
+    ::uhd::tune_request_t new_tune_request;
+    if (pmt::dict_has_key(tune, pmt::mp("dsp_freq"))) {
+        new_tune_request.dsp_freq =
+            pmt::to_double(pmt::dict_ref(tune, pmt::mp("dsp_freq"), 0));
+    }
+    if (pmt::dict_has_key(tune, pmt::mp("rf_freq"))) {
+        new_tune_request.rf_freq =
+            pmt::to_double(pmt::dict_ref(tune, pmt::mp("rf_freq"), 0));
+    }
+    if (pmt::dict_has_key(tune, pmt::mp("target_freq"))) {
+        new_tune_request.target_freq =
+            pmt::to_double(pmt::dict_ref(tune, pmt::mp("target_freq"), 0));
+    }
+    if (pmt::dict_has_key(tune, pmt::mp("dsp_freq_policy"))) {
+        std::string policy = pmt::symbol_to_string(
+            pmt::dict_ref(tune, pmt::mp("dsp_freq_policy"), pmt::mp("A")));
+        if (policy == "M") {
+            new_tune_request.dsp_freq_policy = ::uhd::tune_request_t::POLICY_MANUAL;
+        } else if (policy == "A") {
+            new_tune_request.dsp_freq_policy = ::uhd::tune_request_t::POLICY_AUTO;
+        } else {
+            new_tune_request.dsp_freq_policy = ::uhd::tune_request_t::POLICY_NONE;
+        }
+    }
+    if (pmt::dict_has_key(tune, pmt::mp("rf_freq_policy"))) {
+        std::string policy = pmt::symbol_to_string(
+            pmt::dict_ref(tune, pmt::mp("rf_freq_policy"), pmt::mp("A")));
+        if (policy == "M") {
+            new_tune_request.rf_freq_policy = ::uhd::tune_request_t::POLICY_MANUAL;
+        } else if (policy == "A") {
+            new_tune_request.rf_freq_policy = ::uhd::tune_request_t::POLICY_AUTO;
+        } else {
+            new_tune_request.rf_freq_policy = ::uhd::tune_request_t::POLICY_NONE;
+        }
+    }
+    if (pmt::dict_has_key(tune, pmt::mp("args"))) {
+        new_tune_request.args = ::uhd::device_addr_t(
+            pmt::symbol_to_string(pmt::dict_ref(tune, pmt::mp("args"), pmt::mp(""))));
+    }
+
+    _update_curr_tune_req(new_tune_request, chan, direction);
 }
 
 void usrp_block_impl::_cmd_handler_bw(const pmt::pmt_t& bw,
@@ -720,6 +834,9 @@ void usrp_block_impl::_cmd_handler_lofreq(const pmt::pmt_t& lofreq,
                                           int chan,
                                           const pmt::pmt_t& msg)
 {
+    // Get the direction key
+    const pmt::pmt_t direction = get_cmd_or_default_direction(msg);
+
     if (chan == -1) {
         for (size_t i = 0; i < _nchan; i++) {
             _cmd_handler_lofreq(lofreq, int(i), msg);
@@ -727,7 +844,13 @@ void usrp_block_impl::_cmd_handler_lofreq(const pmt::pmt_t& lofreq,
         return;
     }
 
-    ::uhd::tune_request_t new_tune_request = _curr_tune_req[chan];
+    ::uhd::tune_request_t new_tune_request;
+    if (pmt::eqv(direction, direction_rx())) {
+        new_tune_request = _curr_rx_tune_req[chan];
+    } else {
+        new_tune_request = _curr_tx_tune_req[chan];
+    }
+
     new_tune_request.rf_freq = pmt::to_double(lofreq);
     if (pmt::dict_has_key(msg, cmd_dsp_freq_key())) {
         new_tune_request.dsp_freq =
@@ -736,13 +859,16 @@ void usrp_block_impl::_cmd_handler_lofreq(const pmt::pmt_t& lofreq,
     new_tune_request.rf_freq_policy = ::uhd::tune_request_t::POLICY_MANUAL;
     new_tune_request.dsp_freq_policy = ::uhd::tune_request_t::POLICY_MANUAL;
 
-    _update_curr_tune_req(new_tune_request, chan);
+    _update_curr_tune_req(new_tune_request, chan, direction);
 }
 
 void usrp_block_impl::_cmd_handler_dspfreq(const pmt::pmt_t& dspfreq,
                                            int chan,
                                            const pmt::pmt_t& msg)
 {
+    // Get the direction key
+    const pmt::pmt_t direction = get_cmd_or_default_direction(msg);
+
     if (pmt::dict_has_key(msg, cmd_lo_freq_key())) {
         // Then it's already dealt with
         return;
@@ -755,10 +881,30 @@ void usrp_block_impl::_cmd_handler_dspfreq(const pmt::pmt_t& dspfreq,
         return;
     }
 
-    ::uhd::tune_request_t new_tune_request = _curr_tune_req[chan];
+    ::uhd::tune_request_t new_tune_request;
+    if (pmt::eqv(direction, direction_rx())) {
+        new_tune_request = _curr_rx_tune_req[chan];
+    } else {
+        new_tune_request = _curr_tx_tune_req[chan];
+    }
+
     new_tune_request.dsp_freq = pmt::to_double(dspfreq);
     new_tune_request.rf_freq_policy = ::uhd::tune_request_t::POLICY_MANUAL;
     new_tune_request.dsp_freq_policy = ::uhd::tune_request_t::POLICY_MANUAL;
 
-    _update_curr_tune_req(new_tune_request, chan);
+    _update_curr_tune_req(new_tune_request, chan, direction);
+}
+
+const pmt::pmt_t
+usrp_block_impl::get_cmd_or_default_direction(const pmt::pmt_t& cmd) const
+{
+    const pmt::pmt_t dir = pmt::dict_ref(cmd, cmd_direction_key(), pmt::PMT_NIL);
+
+    // if the direction key exists and is either "TX" or "RX", return that
+    if (pmt::is_symbol(dir) &&
+        (pmt::eqv(dir, direction_rx()) || pmt::eqv(dir, direction_tx()))) {
+        return dir;
+    }
+    // otherwise return the direction key for the block that received the cmd
+    return _direction();
 }

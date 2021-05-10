@@ -86,9 +86,12 @@ target_link_libraries(gnuradio-fec PUBLIC
     gnuradio-blocks
 )
 
+# Address linker issues with std::filesystem on Centos 8 and Debian
+target_link_libraries(gnuradio-fec PRIVATE $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:stdc++fs>)
+
 # Only include the LDPC work if we have GSL installed
 if(GSL_FOUND)
-  target_link_libraries(gnuradio-fec PUBLIC gsl::gsl)
+  target_link_libraries(gnuradio-fec PUBLIC GSL::gsl)
   target_sources(gnuradio-fec PRIVATE
     ldpc_bit_flip_decoder_impl.cc
     ldpc_par_mtrx_encoder_impl.cc

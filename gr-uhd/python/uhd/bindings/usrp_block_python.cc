@@ -23,6 +23,7 @@ void bind_usrp_block(py::module& m)
     using usrp_block = ::gr::uhd::usrp_block;
 
     m.attr("ALL_MBOARDS") = py::int_(::uhd::usrp::multi_usrp::ALL_MBOARDS);
+    m.attr("ALL_LOS") = py::str(::uhd::usrp::multi_usrp::ALL_LOS);
 
     py::class_<usrp_block,
                gr::sync_block,
@@ -90,9 +91,10 @@ void bind_usrp_block(py::module& m)
 
 
         .def("set_gain",
-             (void (usrp_block::*)(double, size_t)) & usrp_block::set_gain,
+             (void (usrp_block::*)(double, size_t, pmt::pmt_t)) & usrp_block::set_gain,
              py::arg("gain"),
              py::arg("chan") = 0,
+             py::arg("direction") = pmt::PMT_NIL,
              D(usrp_block, set_gain, 0))
 
 
@@ -397,7 +399,7 @@ void bind_usrp_block(py::module& m)
 
         .def("get_filter_names",
              &usrp_block::get_filter_names,
-             py::arg("search_mask") = "",
+             py::arg("chan") = 0,
              D(usrp_block, get_filter_names))
 
 
@@ -405,12 +407,14 @@ void bind_usrp_block(py::module& m)
              &usrp_block::set_filter,
              py::arg("path"),
              py::arg("filter"),
+             py::arg("chan") = 0,
              D(usrp_block, set_filter))
 
 
         .def("get_filter",
              &usrp_block::get_filter,
              py::arg("path"),
+             py::arg("chan") = 0,
              D(usrp_block, get_filter))
 
         .def(
@@ -472,8 +476,8 @@ void bind_usrp_block(py::module& m)
     m.def("cmd_tag_key", &::gr::uhd::cmd_tag_key, D(cmd_tag_key));
 
 
-    m.def("ant_direction_rx", &::gr::uhd::ant_direction_rx, D(ant_direction_rx));
+    m.def("direction_rx", &::gr::uhd::direction_rx, D(direction_rx));
 
 
-    m.def("ant_direction_tx", &::gr::uhd::ant_direction_tx, D(ant_direction_tx));
+    m.def("direction_tx", &::gr::uhd::direction_tx, D(direction_tx));
 }

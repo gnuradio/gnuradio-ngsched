@@ -13,12 +13,12 @@
 
 <%
 class_name = flow_graph.get_option('id')
-version_list = config.version.split(".")
+version_list = config.version_parts
 short_version = '.'.join(version_list[0:2])
 %>\
 
 cmake_minimum_required(VERSION 3.8)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 project(${class_name})
 
@@ -55,7 +55,7 @@ target_link_libraries(${class_name}
     gnuradio::gnuradio-blocks
     % for link in links:
     % if link:
-    ${link.replace("gnuradio-", "gnuradio::gnuradio-")}
+    ${link}
     % endif
     % endfor
 

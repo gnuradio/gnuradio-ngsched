@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(constellation.h)                                           */
-/* BINDTOOL_HEADER_FILE_HASH(5f7cb544c3d7104e228f713f28b385ee)                     */
+/* BINDTOOL_HEADER_FILE_HASH(096509fbce3ab57c42e63e4c4c15c6f6)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -43,25 +43,18 @@ void bind_constellation(py::module& m)
     using constellation_8psk_natural = ::gr::digital::constellation_8psk_natural;
     using constellation_16qam = ::gr::digital::constellation_16qam;
 
+    py::class_<constellation, std::shared_ptr<constellation>> constellation_class(
+        m, "constellation", D(constellation));
 
-    py::class_<constellation, std::shared_ptr<constellation>>(
-        m, "constellation", D(constellation))
+    py::enum_<constellation::normalization_t>(constellation_class, "normalization")
+        .value("NO_NORMALIZATION", constellation::NO_NORMALIZATION)
+        .value("POWER_NORMALIZATION", constellation::POWER_NORMALIZATION)
+        .value("AMPLITUDE_NORMALIZATION", constellation::AMPLITUDE_NORMALIZATION)
+        .export_values();
 
-        // .def(py::init<std::vector<std::complex<float>,
-        // std::allocator<std::complex<float> > >,std::vector<int, std::allocator<int>
-        // >,unsigned int,unsigned int,bool>(),           py::arg("constell"),
-        //    py::arg("pre_diff_code"),
-        //    py::arg("rotational_symmetry"),
-        //    py::arg("dimensionality"),
-        //    py::arg("normalize_points") = true,
-        //    D(constellation,constellation,0)
-        // )
-        // .def(py::init<>(),D(constellation,constellation,1))
-        // .def(py::init<gr::digital::constellation const &>(),           py::arg("arg0"),
-        //    D(constellation,constellation,2)
-        // )
+    py::implicitly_convertible<int, gr::digital::constellation::normalization_t>();
 
-
+    constellation_class
         .def("map_to_points",
              &constellation::map_to_points,
              py::arg("value"),
@@ -212,7 +205,7 @@ void bind_constellation(py::module& m)
              py::arg("pre_diff_code"),
              py::arg("rotational_symmetry"),
              py::arg("dimensionality"),
-             py::arg("normalize_points") = true,
+             py::arg("normalization") = constellation::AMPLITUDE_NORMALIZATION,
              D(constellation_calcdist, make))
 
 
@@ -228,20 +221,6 @@ void bind_constellation(py::module& m)
                gr::digital::constellation,
                std::shared_ptr<constellation_sector>>(
         m, "constellation_sector", D(constellation_sector))
-
-        // .def(py::init<std::vector<std::complex<float>,
-        // std::allocator<std::complex<float> > >,std::vector<int, std::allocator<int>
-        // >,unsigned int,unsigned int,unsigned int>(),           py::arg("constell"),
-        //    py::arg("pre_diff_code"),
-        //    py::arg("rotational_symmetry"),
-        //    py::arg("dimensionality"),
-        //    py::arg("n_sectors"),
-        //    D(constellation_sector,constellation_sector,0)
-        // )
-        // .def(py::init<gr::digital::constellation_sector const &>(), py::arg("arg0"),
-        //    D(constellation_sector,constellation_sector,1)
-        // )
-
 
         .def("decision_maker",
              &constellation_sector::decision_maker,
@@ -264,10 +243,8 @@ void bind_constellation(py::module& m)
              py::arg("imag_sectors"),
              py::arg("width_real_sectors"),
              py::arg("width_imag_sectors"),
-             D(constellation_rect, make))
-
-
-        ;
+             py::arg("normalization") = constellation::AMPLITUDE_NORMALIZATION,
+             D(constellation_rect, make));
 
 
     py::class_<constellation_expl_rect,
@@ -284,10 +261,7 @@ void bind_constellation(py::module& m)
              py::arg("width_real_sectors"),
              py::arg("width_imag_sectors"),
              py::arg("sector_values"),
-             D(constellation_expl_rect, make))
-
-
-        ;
+             D(constellation_expl_rect, make));
 
 
     py::class_<constellation_psk,
@@ -299,10 +273,7 @@ void bind_constellation(py::module& m)
              py::arg("constell"),
              py::arg("pre_diff_code"),
              py::arg("n_sectors"),
-             D(constellation_psk, make))
-
-
-        ;
+             D(constellation_psk, make));
 
 
     py::class_<constellation_bpsk,
@@ -316,9 +287,7 @@ void bind_constellation(py::module& m)
         .def("decision_maker",
              &constellation_bpsk::decision_maker,
              py::arg("sample"),
-             D(constellation_bpsk, decision_maker))
-
-        ;
+             D(constellation_bpsk, decision_maker));
 
 
     py::class_<constellation_qpsk,
@@ -332,9 +301,7 @@ void bind_constellation(py::module& m)
         .def("decision_maker",
              &constellation_qpsk::decision_maker,
              py::arg("sample"),
-             D(constellation_qpsk, decision_maker))
-
-        ;
+             D(constellation_qpsk, decision_maker));
 
 
     py::class_<constellation_dqpsk,
@@ -348,9 +315,7 @@ void bind_constellation(py::module& m)
         .def("decision_maker",
              &constellation_dqpsk::decision_maker,
              py::arg("sample"),
-             D(constellation_dqpsk, decision_maker))
-
-        ;
+             D(constellation_dqpsk, decision_maker));
 
 
     py::class_<constellation_8psk,
@@ -364,9 +329,7 @@ void bind_constellation(py::module& m)
         .def("decision_maker",
              &constellation_8psk::decision_maker,
              py::arg("sample"),
-             D(constellation_8psk, decision_maker))
-
-        ;
+             D(constellation_8psk, decision_maker));
 
 
     py::class_<constellation_8psk_natural,
@@ -381,9 +344,7 @@ void bind_constellation(py::module& m)
         .def("decision_maker",
              &constellation_8psk_natural::decision_maker,
              py::arg("sample"),
-             D(constellation_8psk_natural, decision_maker))
-
-        ;
+             D(constellation_8psk_natural, decision_maker));
 
 
     py::class_<constellation_16qam,
@@ -397,7 +358,5 @@ void bind_constellation(py::module& m)
         .def("decision_maker",
              &constellation_16qam::decision_maker,
              py::arg("sample"),
-             D(constellation_16qam, decision_maker))
-
-        ;
+             D(constellation_16qam, decision_maker));
 }

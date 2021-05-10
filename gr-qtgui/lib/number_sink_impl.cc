@@ -20,8 +20,8 @@
 #include <qwt_symbol.h>
 #include <volk/volk.h>
 
-#include <string.h>
 #include <cmath>
+#include <cstring>
 
 #ifdef _MSC_VER
 #define isfinite _finite
@@ -60,16 +60,6 @@ number_sink_impl::number_sink_impl(
         d_iir[n].set_taps(d_average);
     }
 
-    // Required now for Qt; argc must be greater than 0 and argv
-    // must have at least one valid character. Must be valid through
-    // life of the qApplication:
-    // http://harmattan-dev.nokia.com/docs/library/html/qt4/qapplication.html
-    d_argc = 1;
-    d_argv = new char;
-    d_argv[0] = '\0';
-
-    d_main_gui = NULL;
-
     // Set alignment properties for VOLK
     const int alignment_multiple = volk_get_alignment() / d_itemsize;
     set_alignment(std::max(1, alignment_multiple));
@@ -99,6 +89,7 @@ void number_sink_impl::initialize()
     }
 
     d_main_gui = new NumberDisplayForm(d_nconnections, d_type, d_parent);
+    d_main_gui->setAverage(d_average);
 
     // initialize update time to 10 times a second
     set_update_time(0.1);
@@ -135,6 +126,7 @@ void number_sink_impl::set_average(const float avg)
         d_avg_value[n] = 0;
         d_iir[n].set_taps(d_average);
     }
+    d_main_gui->setAverage(avg);
 }
 
 void number_sink_impl::set_graph_type(const graph_t type)

@@ -9,7 +9,7 @@
 #
 
 
-from gnuradio import gr, gr_unittest, filter, blocks
+from gnuradio import gr, gr_unittest, fft, filter, blocks
 
 import math
 
@@ -41,7 +41,7 @@ class test_pfb_interpolator(gr_unittest.TestCase):
             fs / 4,
             fs / 10,
             attenuation_dB=80,
-            window=filter.firdes.WIN_BLACKMAN_hARRIS)
+            window=fft.window.WIN_BLACKMAN_hARRIS)
 
         freq = 123.456
         data = sig_source_c(fs, freq, 1, N)

@@ -21,9 +21,9 @@
 #include "portaudio_sink.h"
 #include <gnuradio/io_signature.h>
 #include <gnuradio/prefs.h>
-#include <stdio.h>
-#include <string.h>
 #include <unistd.h>
+#include <cstdio>
+#include <cstring>
 #include <future>
 #include <iostream>
 #include <stdexcept>
@@ -72,7 +72,7 @@ void portaudio_sink::create_ringbuffer(void)
 
 void portaudio_underrun_notification(gr::logger_ptr logger)
 {
-    ssize_t r = ::write(2, "aU", 2);
+    auto r = ::write(2, "aU", 2);
     if (r == -1) {
         GR_LOG_ERROR(logger, "portaudio_source_callback write error to stderr.");
     }
@@ -114,7 +114,7 @@ int portaudio_sink_callback(const void* inputBuffer,
     }
 
     else { // underrun
-        std::async(&portaudio_underrun_notification, self->d_logger);
+        auto future_local = std::async(&portaudio_underrun_notification, self->d_logger);
         // FIXME we should transfer what we've got and pad the rest
         memset(outputBuffer, 0, nreqd_samples * sizeof(sample_t));
 

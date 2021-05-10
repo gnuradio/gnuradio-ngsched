@@ -14,14 +14,6 @@
 
 #include "message_strobe_impl.h"
 #include <gnuradio/io_signature.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <cstdio>
-#include <iostream>
-#include <stdexcept>
 
 namespace gr {
 namespace blocks {
@@ -49,7 +41,7 @@ message_strobe_impl::~message_strobe_impl() {}
 bool message_strobe_impl::start()
 {
     d_finished = false;
-    d_thread = gr::thread::thread(std::bind(&message_strobe_impl::run, this));
+    d_thread = gr::thread::thread([this] { run(); });
 
     return block::start();
 }

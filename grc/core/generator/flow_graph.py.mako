@@ -44,6 +44,34 @@ ${imp}
 % endfor
 
 ########################################################
+##Prepare snippets
+########################################################
+% for snip in flow_graph.get_snippets_dict():
+
+${indent(snip['def'])}
+% for line in snip['lines']:
+    ${indent(line)}
+% endfor
+% endfor
+\
+<%
+snippet_sections = ['main_after_init', 'main_after_start', 'main_after_stop']
+snippets = {}
+for section in snippet_sections:
+    snippets[section] = flow_graph.get_snippets_dict(section)
+%>
+\
+%for section in snippet_sections:
+%if snippets[section]:
+
+def snippets_${section}(tb):
+    % for snip in snippets[section]:
+    ${indent(snip['call'])}
+    % endfor
+%endif
+%endfor
+
+########################################################
 ##Create Class
 ##  Write the class declaration for a top or hier block.
 ##  The parameter names are the arguments to __init__.
@@ -217,7 +245,7 @@ gr.io_signature.makev(${len(io_sigs)}, ${len(io_sigs)}, [${', '.join(size_strs)}
         # Connections
         ${'##################################################'}
         % for connection in connections:
-        ${ connection.rstrip() }
+        ${ indent(connection.rstrip()) }
         % endfor
         % endif
 
@@ -229,6 +257,9 @@ gr.io_signature.makev(${len(io_sigs)}, ${len(io_sigs)}, [${', '.join(size_strs)}
     def closeEvent(self, event):
         self.settings = Qt.QSettings("GNU Radio", "${class_name}")
         self.settings.setValue("geometry", self.saveGeometry())
+        self.stop()
+        self.wait()
+        ${'snippets_main_after_stop(self)' if snippets['main_after_stop'] else ''}
         event.accept()
     % if flow_graph.get_option('qt_qss_theme'):
 
@@ -269,30 +300,6 @@ gr.io_signature.makev(${len(io_sigs)}, ${len(io_sigs)}, [${', '.join(size_strs)}
         % endif
     % endfor
 \
-% for snip in flow_graph.get_snippets_dict():
-
-${indent(snip['def'])}
-% for line in snip['lines']:
-    ${indent(line)}
-% endfor
-% endfor
-\
-<%
-snippet_sections = ['main_after_init', 'main_after_start', 'main_after_stop']
-snippets = {}
-for section in snippet_sections:
-    snippets[section] = flow_graph.get_snippets_dict(section)
-%>
-\
-%for section in snippet_sections:
-%if snippets[section]:
-
-def snippets_${section}(tb):
-    % for snip in snippets[section]:
-    ${indent(snip['call'])}
-    % endfor
-%endif
-%endfor
 
 ########################################################
 ##Create Main
@@ -367,6 +374,9 @@ def main(top_block_cls=${class_name}, options=None):
     tb.show()
 
     def sig_handler(sig=None, frame=None):
+        tb.stop()
+        tb.wait()
+        ${'snippets_main_after_stop(tb)' if snippets['main_after_stop'] else ''}
         Qt.QApplication.quit()
 
     signal.signal(signal.SIGINT, sig_handler)
@@ -376,11 +386,6 @@ def main(top_block_cls=${class_name}, options=None):
     timer.start(500)
     timer.timeout.connect(lambda: None)
 
-    def quitting():
-        tb.stop()
-        tb.wait()
-        ${'snippets_main_after_stop(tb)' if snippets['main_after_stop'] else ''}
-    qapp.aboutToQuit.connect(quitting)
     % for m in monitors:
     % if m.params['en'].get_value() == 'True':
     tb.${m.name}.start()

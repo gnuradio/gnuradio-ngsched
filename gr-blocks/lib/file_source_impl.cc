@@ -16,7 +16,6 @@
 #include <gnuradio/io_signature.h>
 #include <gnuradio/thread/thread.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <cstdio>
@@ -25,9 +24,9 @@
 #ifdef _MSC_VER
 #define GR_FSEEK _fseeki64
 #define GR_FTELL _ftelli64
-#define GR_FSTAT _fstat
+#define GR_FSTAT _fstati64
 #define GR_FILENO _fileno
-#define GR_STAT _stat
+#define GR_STAT _stati64
 #define S_ISREG(m) (((m)&S_IFMT) == S_IFREG)
 #else
 #define GR_FSEEK fseeko
@@ -270,8 +269,9 @@ int file_source_impl::work(int noutput_items,
     gr::thread::scoped_lock lock(fp_mutex); // hold for the rest of this function
 
     // No items remaining - all done
-    if (d_items_remaining == 0)
+    if (d_items_remaining == 0) {
         return WORK_DONE;
+    }
 
     while (size) {
 
@@ -287,13 +287,21 @@ int file_source_impl::work(int noutput_items,
 
         uint64_t nitems_to_read = std::min(size, d_items_remaining);
 
-        // Since the bounds of the file are known, unexpected nitems is an error
-        if (nitems_to_read != fread(o, d_itemsize, nitems_to_read, (FILE*)d_fp))
-            throw std::runtime_error("fread error");
+        size_t nitems_read = fread(o, d_itemsize, nitems_to_read, (FILE*)d_fp);
+        if (nitems_to_read != nitems_read) {
+            // Size of non-seekable files is unknown. EOF is normal.
+            if (!d_seekable && feof((FILE*)d_fp)) {
+                size -= nitems_read;
+                d_items_remaining = 0;
+                break;
+            }
 
-        size -= nitems_to_read;
-        d_items_remaining -= nitems_to_read;
-        o += nitems_to_read * d_itemsize;
+            throw std::runtime_error("fread error");
+        }
+
+        size -= nitems_read;
+        d_items_remaining -= nitems_read;
+        o += nitems_read * d_itemsize;
 
         // Ran out of items ("EOF")
         if (d_items_remaining == 0) {

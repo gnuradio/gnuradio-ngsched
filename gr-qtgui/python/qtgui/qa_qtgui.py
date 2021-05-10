@@ -21,8 +21,8 @@ class test_qtgui(gr_unittest.TestCase):
         self.tb = None
 
     # Tests to make sure we can instantiate the sink.
-    # We use '5' in place of filter.firdes.WIN_BLACKMAN_hARRIS so we
-    # don't have to worry about importing filter just for this one
+    # We use '5' in place of fft.window.WIN_BLACKMAN_hARRIS so we
+    # don't have to worry about importing fft just for this one
     # constant.
     def test01(self):
         self.qtsnk = qtgui.sink_c(1024, 5,

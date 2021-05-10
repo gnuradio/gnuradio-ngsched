@@ -10,6 +10,7 @@ from textwrap import dedent
 
 from . import Block, register_build_in
 from ._templates import MakoTemplates
+from ._flags import Flags
 
 from .. import utils
 from ..base import Element
@@ -84,6 +85,7 @@ class EPyBlock(Block):
         super(EPyBlock, self).__init__(flow_graph, **kwargs)
         self.states['_io_cache'] = ''
 
+        self.module_name = self.name
         self._epy_source_hash = -1
         self._epy_reload_error = None
 
@@ -119,7 +121,9 @@ class EPyBlock(Block):
         self.label = blk_io.name or blk_io.cls
         self.documentation = {'': blk_io.doc}
 
-        self.templates['imports'] = 'import ' + self.name
+        self.module_name = "{}_{}".format(self.parent_flowgraph.get_option("id"), self.name)
+        self.templates['imports'] = 'import {} as {}  # embedded python block'.format(
+            self.module_name, self.name)
         self.templates['make'] = '{mod}.{cls}({args})'.format(
             mod=self.name,
             cls=blk_io.cls,
@@ -218,17 +222,22 @@ class EPyModule(Block):
         to set parameters of other blocks in your flowgraph.
     """)}
 
-    epy_flags = Block.flags
-    epy_flags.set(epy_flags.SHOW_ID)
+    flags = Flags(Flags.SHOW_ID)
 
     parameters_data = build_params(
         params_raw=[
             dict(label='Code', id='source_code', dtype='_multiline_python_external',
                  default='# this module will be imported in the into your flowgraph',
                  hide='part')
-        ], have_inputs=False, have_outputs=False, flags=epy_flags, block_id=key
+        ], have_inputs=False, have_outputs=False, flags=flags, block_id=key
     )
 
-    templates = MakoTemplates(
-        imports='import ${ id }  # embedded python module',
-    )
+    def __init__(self, flow_graph, **kwargs):
+        super(EPyModule, self).__init__(flow_graph, **kwargs)
+        self.module_name = self.name
+
+    def rewrite(self):
+        super(EPyModule, self).rewrite()
+        self.module_name = "{}_{}".format(self.parent_flowgraph.get_option("id"), self.name)
+        self.templates['imports'] = 'import {} as {}  # embedded python module'.format(
+            self.module_name, self.name)

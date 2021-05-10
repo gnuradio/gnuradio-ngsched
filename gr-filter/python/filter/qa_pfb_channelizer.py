@@ -9,7 +9,7 @@
 #
 
 
-from gnuradio import gr, gr_unittest, filter, blocks, analog
+from gnuradio import gr, gr_unittest, fft, filter, blocks, analog
 import math
 import cmath
 
@@ -38,7 +38,7 @@ class test_pfb_channelizer(gr_unittest.TestCase):
         self.taps = filter.firdes.low_pass_2(
             1, self.ifs, self.fs / 2, self.fs / 10,
             attenuation_dB=80,
-            window=filter.firdes.WIN_BLACKMAN_hARRIS)
+            window=fft.window.WIN_BLACKMAN_hARRIS)
 
         self.Ntest = 50
 

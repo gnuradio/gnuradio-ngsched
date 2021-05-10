@@ -8,7 +8,7 @@
 import numbers
 
 from .drawable import Drawable
-from .. import ParamWidgets, Utils, Constants
+from .. import ParamWidgets, Utils, Constants, Actions
 from ...core.params import Param as CoreParam
 
 
@@ -73,6 +73,9 @@ class Param(CoreParam):
             if hasattr(value, "__len__"):
                 tooltip_lines.append('Length: {}'.format(len(value)))
             value = str(value)
+            # ensure that value is a UTF-8 string
+            # Old PMTs could produce non-UTF-8 strings
+            value = value.encode('utf-8', 'backslashreplace').decode('utf-8')
             if len(value) > 100:
                 value = '{}...{}'.format(value[:50], value[-50:])
             tooltip_lines.append('Value: ' + value)
@@ -83,6 +86,22 @@ class Param(CoreParam):
             tooltip_lines.extend(' * ' + msg for msg in errors)
         return '\n'.join(tooltip_lines)
 
+
+
+    ##################################################
+    # Truncate helper method
+    ##################################################
+    def truncate(self, string, style=0):
+        max_len = max(27 - len(self.name), 3)
+        if len(string) > max_len:
+            if style < 0:  # Front truncate
+                string = '...' + string[3-max_len:]
+            elif style == 0:  # Center truncate
+                string = string[:max_len//2 - 3] + '...' + string[-max_len//2:]
+            elif style > 0:  # Rear truncate
+                string = string[:max_len-3] + '...'
+        return string
+
     def pretty_print(self):
         """
         Get the repr (nice string format) for this param.
@@ -90,26 +109,13 @@ class Param(CoreParam):
         Returns:
             the string representation
         """
-        ##################################################
-        # Truncate helper method
-        ##################################################
-        def _truncate(string, style=0):
-            max_len = max(27 - len(self.name), 3)
-            if len(string) > max_len:
-                if style < 0:  # Front truncate
-                    string = '...' + string[3-max_len:]
-                elif style == 0:  # Center truncate
-                    string = string[:max_len//2 - 3] + '...' + string[-max_len//2:]
-                elif style > 0:  # Rear truncate
-                    string = string[:max_len-3] + '...'
-            return string
 
         ##################################################
         # Simple conditions
         ##################################################
         value = self.get_value()
         if not self.is_valid():
-            return _truncate(value)
+            return self.truncate(value)
         if value in self.options:
             return self.options[value]  # its name
 
@@ -139,9 +145,12 @@ class Param(CoreParam):
         else:
             # Other types
             dt_str = str(e)
+            # ensure that value is a UTF-8 string
+            # Old PMTs could produce non-UTF-8 strings
+            dt_str = dt_str.encode('utf-8', 'backslashreplace').decode('utf-8')
 
         # Done
-        return _truncate(dt_str, truncate)
+        return self.truncate(dt_str, truncate)
 
     def format_block_surface_markup(self):
         """
@@ -150,6 +159,29 @@ class Param(CoreParam):
         Returns:
             a pango markup string
         """
+
+        # TODO: is this the correct way to do this?
+        is_evaluated = self.value != str(self.get_evaluated())
+        show_value = Actions.TOGGLE_SHOW_PARAMETER_EVALUATION.get_active()
+        show_expr = Actions.TOGGLE_SHOW_PARAMETER_EXPRESSION.get_active()
+
+        display_value = ""
+
+        # Include the value defined by the user (after evaluation)
+        if not is_evaluated or show_value or not show_expr:
+            display_value += Utils.encode(
+                self.pretty_print().replace('\n', ' '))
+
+        # Include the expression that was evaluated to get the value
+        if is_evaluated and show_expr:
+            expr_string = "<i>" + \
+                Utils.encode(self.truncate(self.value)) + "</i>"
+
+            if display_value:  # We are already displaying the value
+                display_value = expr_string + "=" + display_value
+            else:
+                display_value = expr_string
+
         return '<span {foreground} font_desc="{font}"><b>{label}:</b> {value}</span>'.format(
-            foreground='foreground="red"' if not self.is_valid() else '', font=Constants.PARAM_FONT,
-            label=Utils.encode(self.name), value=Utils.encode(self.pretty_print().replace('\n', ' ')))
+             foreground='foreground="red"' if not self.is_valid() else '', font=Constants.PARAM_FONT,
+            label=Utils.encode(self.name), value=display_value)

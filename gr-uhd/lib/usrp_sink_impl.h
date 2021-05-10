@@ -81,13 +81,16 @@ public:
     bool get_lo_export_enabled(const std::string& name, size_t chan) override;
     double get_lo_freq(const std::string& name, size_t chan) override;
     ::uhd::freq_range_t get_lo_freq_range(const std::string& name, size_t chan) override;
+    std::vector<std::string> get_filter_names(const size_t chan) override;
+    ::uhd::filter_info_base::sptr get_filter(const std::string& path,
+                                             const size_t chan) override;
 
     void set_subdev_spec(const std::string& spec, size_t mboard) override;
     std::string get_subdev_spec(size_t mboard) override;
     void set_samp_rate(double rate) override;
     ::uhd::tune_result_t set_center_freq(const ::uhd::tune_request_t tune_request,
                                          size_t chan) override;
-    void set_gain(double gain, size_t chan) override;
+    void set_gain(double gain, size_t chan, pmt::pmt_t direction) override;
     void set_gain(double gain, const std::string& name, size_t chan) override;
     void set_normalized_gain(double gain, size_t chan) override;
     void set_power_reference(double power_dbm, size_t chan) override;
@@ -106,6 +109,9 @@ public:
                                const std::string& name = ALL_LOS,
                                size_t chan = 0) override;
     double set_lo_freq(double freq, const std::string& name, size_t chan) override;
+    void set_filter(const std::string& path,
+                    ::uhd::filter_info_base::sptr filter,
+                    const size_t chan) override;
 
     bool start(void) override;
     bool stop(void) override;
@@ -136,6 +142,8 @@ private:
     bool _async_event_loop_running;
     void async_event_loop();
     gr::thread::thread _async_event_thread;
+
+    const pmt::pmt_t _direction() const override { return direction_tx(); };
 };
 
 } /* namespace uhd */

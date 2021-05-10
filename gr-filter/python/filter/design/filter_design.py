@@ -6,7 +6,6 @@
 #
 #
 
-
 import sys
 import os
 import re
@@ -15,7 +14,7 @@ import copy
 import warnings
 from optparse import OptionParser
 
-from gnuradio import filter
+from gnuradio import filter, fft
 
 try:
     import numpy as np
@@ -109,6 +108,7 @@ class gr_plot_filter(QtGui.QMainWindow):
                 self.gui.fselectComboBox.removeItem(ind)
 
         self.gui.action_save.triggered.connect(self.action_save_dialog)
+        self.gui.action_save.setEnabled(False)
         self.gui.action_open.triggered.connect(self.action_open_dialog)
 
         self.gui.filterTypeComboBox.currentIndexChanged['const QString&'].connect(self.changed_filter_type)
@@ -488,12 +488,12 @@ class gr_plot_filter(QtGui.QMainWindow):
 
         self.gui.nTapsEdit.setText("0")
 
-        self.filterWindows = {"Hamming Window" : filter.firdes.WIN_HAMMING,
-                              "Hann Window" : filter.firdes.WIN_HANN,
-                              "Blackman Window" : filter.firdes.WIN_BLACKMAN,
-                              "Rectangular Window" : filter.firdes.WIN_RECTANGULAR,
-                              "Kaiser Window" : filter.firdes.WIN_KAISER,
-                              "Blackman-harris Window" : filter.firdes.WIN_BLACKMAN_hARRIS}
+        self.filterWindows = {"Hamming Window" : fft.window.WIN_HAMMING,
+                              "Hann Window" : fft.window.WIN_HANN,
+                              "Blackman Window" : fft.window.WIN_BLACKMAN,
+                              "Rectangular Window" : fft.window.WIN_RECTANGULAR,
+                              "Kaiser Window" : fft.window.WIN_KAISER,
+                              "Blackman-harris Window" : fft.window.WIN_BLACKMAN_hARRIS}
         self.EQUIRIPPLE_FILT = 6 # const for equiripple filter window types.
 
 
@@ -586,7 +586,6 @@ class gr_plot_filter(QtGui.QMainWindow):
 
 
     def changed_fselect(self, ftype):
-        strftype = ftype
         if(ftype == "FIR"):
             self.gui.iirfilterTypeComboBox.hide()
             self.gui.iirfilterBandComboBox.hide()
@@ -615,42 +614,48 @@ class gr_plot_filter(QtGui.QMainWindow):
 #self.design()
 
     def set_order(self, ftype):
-        strftype = ftype
         if(ftype == "Bessel"):
             self.gui.filterTypeWidget.setCurrentWidget(self.gui.iirbesselPage)
+            self.changed_iirfilter_band(self.gui.iirfilterBandComboBox.currentText())
         else:
             self.changed_iirfilter_band(self.gui.iirfilterBandComboBox.currentText())
 
 #self.design()
 
     def changed_iirfilter_band(self, ftype):
-        strftype = ftype
         iirftype = self.gui.iirfilterTypeComboBox.currentText()
         if(ftype == "Low Pass"):
             if(iirftype == "Bessel"):
                 self.gui.filterTypeWidget.setCurrentWidget(self.gui.iirbesselPage)
+                self.gui.iirbesselcritLabel2.hide()
+                self.gui.iirbesselcritEdit2.hide()
             else:
                 self.gui.filterTypeWidget.setCurrentWidget(self.gui.iirlpfPage)
         elif(ftype == "Band Pass"):
             if(iirftype == "Bessel"):
                 self.gui.filterTypeWidget.setCurrentWidget(self.gui.iirbesselPage)
+                self.gui.iirbesselcritLabel2.show()
+                self.gui.iirbesselcritEdit2.show()
             else:
                 self.gui.filterTypeWidget.setCurrentWidget(self.gui.iirbpfPage)
         elif(ftype == "Band Stop"):
             if(iirftype == "Bessel"):
                 self.gui.filterTypeWidget.setCurrentWidget(self.gui.iirbesselPage)
+                self.gui.iirbesselcritLabel2.show()
+                self.gui.iirbesselcritEdit2.show()
             else:
                 self.gui.filterTypeWidget.setCurrentWidget(self.gui.iirbsfPage)
         elif(ftype == "High Pass"):
             if(iirftype == "Bessel"):
                 self.gui.filterTypeWidget.setCurrentWidget(self.gui.iirbesselPage)
+                self.gui.iirbesselcritLabel2.hide()
+                self.gui.iirbesselcritEdit2.hide()
             else:
                 self.gui.filterTypeWidget.setCurrentWidget(self.gui.iirhpfPage)
 
 #self.design()
 
     def changed_filter_type(self, ftype):
-        strftype = ftype
         if(ftype == "Low Pass"):
             self.gui.filterTypeWidget.setCurrentWidget(self.gui.firlpfPage)
             self.remove_bandview()
@@ -803,7 +808,7 @@ class gr_plot_filter(QtGui.QMainWindow):
                         "Half Band" : design_win_hb,
                         "Root Raised Cosine" :  design_win_rrc,
                         "Gaussian" :  design_win_gaus}
-            wintype = self.filterWindows[winstr]
+            wintype = int(self.filterWindows[winstr])
             taps,params,r = designer[ftype](fs, gain, wintype, self)
         if(r):
             if self.gridview:
@@ -821,6 +826,7 @@ class gr_plot_filter(QtGui.QMainWindow):
         self.gui.mpzPlot.insertZeros(zeros)
         self.gui.mpzPlot.insertPoles(poles)
         self.update_fcoeff()
+        self.gui.action_save.setEnabled(True)
         # self.set_drawideal()
         # Return taps if callback is enabled.
         if self.callback:
@@ -894,15 +900,15 @@ class gr_plot_filter(QtGui.QMainWindow):
             if iirbtype == "Low Pass" or iirbtype == "High Pass":
                 besselparams.append(float(self.gui.iirbesselcritEdit1.text()))
             else:
-                besselparams.append(getfloat(self.gui.iirbesselcritEdit1.text()))
-                besselparams.append(getfloat(self.gui.iirbesselcritEdit2.text()))
+                besselparams.append(float(self.gui.iirbesselcritEdit1.text()))
+                besselparams.append(float(self.gui.iirbesselcritEdit2.text()))
 
             order = int(self.gui.besselordEdit.text())
 
             try:
                 (self.b, self.a) = signal.iirfilter(order, besselparams, btype=iirbtype.replace(' ', '').lower(),
                                                     analog=sanalog[atype], ftype=iirft[iirftype], output='ba')
-            except StandardError as e:
+            except Exception as e:
                 reply = QtGui.QMessageBox.information(self, "IIR design error", e.args[0],
                                                       QtGui.QMessageBox.Ok)
 
@@ -914,7 +920,7 @@ class gr_plot_filter(QtGui.QMainWindow):
             try:
                 (self.b, self.a) = signal.iirdesign(params[0], params[1], params[2], params[3],
                                                     analog=sanalog[atype], ftype=iirft[iirftype], output='ba')
-            except StandardError as e:
+            except Exception as e:
                 reply = QtGui.QMessageBox.information(self, "IIR design error", e.args[0],
                                                       QtGui.QMessageBox.Ok)
 
@@ -932,7 +938,7 @@ class gr_plot_filter(QtGui.QMainWindow):
         self.update_fcoeff()
         self.gui.nTapsEdit.setText("-")
         self.params = iirparams
-
+        self.gui.action_save.setEnabled(True)
         # Return api_object if callback is enabled.
         if self.callback:
             retobj = ApiObject()
@@ -1987,6 +1993,16 @@ class gr_plot_filter(QtGui.QMainWindow):
         else:
             csvhandle.writerow(["taps",] + list(self.taps))
         handle.close()
+        self.gui.action_save.setEnabled(False)
+        # Iterate through all plots and delete the curves
+        for window in self.plots.values():
+            window.drop_plotdata()
+        # Clear filter coeffs
+        self.gui.filterCoeff.setText("")
+        self.gui.mfilterCoeff.setText("")
+        # Clear poles and zeros plot
+        self.gui.pzPlot.clear()
+        self.replot_all()
 
     def action_open_dialog(self):
         file_dialog_output = QtGui.QFileDialog.getOpenFileName(self, "Open CSV Filter File", ".", "")
@@ -2166,7 +2182,7 @@ class gr_plot_filter(QtGui.QMainWindow):
             self.gui.iirfilterTypeComboBox.setCurrentIndex(iirft[params["filttype"]])
             self.gui.iirfilterBandComboBox.setCurrentIndex(bandpos[params["bandtype"]])
             if params["filttype"] == "bessel":
-                critfreq = map(float, params["critfreq"][1:-1].split(','))
+                critfreq = [float(x) for x in params["critfreq"][1:-1].split(',')]
                 self.gui.besselordEdit.setText(str(params["filtord"]))
                 self.gui.iirbesselcritEdit1.setText(str(critfreq[0]))
                 self.gui.iirbesselcritEdit2.setText(str(critfreq[1]))

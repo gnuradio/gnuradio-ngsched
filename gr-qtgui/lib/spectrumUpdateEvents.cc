@@ -13,49 +13,32 @@
 
 #include <gnuradio/qtgui/spectrumUpdateEvents.h>
 
-SpectrumUpdateEvent::SpectrumUpdateEvent(const float* fftPoints,
+SpectrumUpdateEvent::SpectrumUpdateEvent(const float* fft_points,
                                          const uint64_t numFFTDataPoints,
-                                         const double* realTimeDomainPoints,
-                                         const double* imagTimeDomainPoints,
-                                         const uint64_t numTimeDomainDataPoints,
+                                         const double* real_time_domain_points,
+                                         const double* imag_time_domain_points,
+                                         const uint64_t num_time_domain_points,
                                          const gr::high_res_timer_type dataTimestamp,
                                          const bool repeatDataFlag,
                                          const bool lastOfMultipleUpdateFlag,
                                          const gr::high_res_timer_type generatedTimestamp,
                                          const int droppedFFTFrames)
-    : QEvent(QEvent::Type(SpectrumUpdateEventType))
+    : QEvent(QEvent::Type(SpectrumUpdateEventType)),
+      d_fft_points(fft_points, fft_points + numFFTDataPoints),
+      d_real_data_time_domain_points(real_time_domain_points,
+                                     real_time_domain_points + num_time_domain_points),
+      d_imag_data_time_domain_points(imag_time_domain_points,
+                                     imag_time_domain_points + num_time_domain_points)
 {
-    if (numFFTDataPoints < 1) {
-        _numFFTDataPoints = 1;
-    } else {
-        _numFFTDataPoints = numFFTDataPoints;
+    if (d_fft_points.empty()) {
+        d_fft_points.resize(1);
     }
 
-    if (numTimeDomainDataPoints < 1) {
-        _numTimeDomainDataPoints = 1;
-    } else {
-        _numTimeDomainDataPoints = numTimeDomainDataPoints;
+    if (num_time_domain_points == 0) {
+        d_real_data_time_domain_points.resize(1);
+        d_imag_data_time_domain_points.resize(1);
     }
 
-    _fftPoints = new float[_numFFTDataPoints];
-    _fftPoints[0] = 0;
-    memcpy(_fftPoints, fftPoints, numFFTDataPoints * sizeof(float));
-
-    _realDataTimeDomainPoints = new double[_numTimeDomainDataPoints];
-    memset(_realDataTimeDomainPoints, 0x0, _numTimeDomainDataPoints * sizeof(double));
-    if (numTimeDomainDataPoints > 0) {
-        memcpy(_realDataTimeDomainPoints,
-               realTimeDomainPoints,
-               numTimeDomainDataPoints * sizeof(double));
-    }
-
-    _imagDataTimeDomainPoints = new double[_numTimeDomainDataPoints];
-    memset(_imagDataTimeDomainPoints, 0x0, _numTimeDomainDataPoints * sizeof(double));
-    if (numTimeDomainDataPoints > 0) {
-        memcpy(_imagDataTimeDomainPoints,
-               imagTimeDomainPoints,
-               numTimeDomainDataPoints * sizeof(double));
-    }
     _dataTimestamp = dataTimestamp;
     _repeatDataFlag = repeatDataFlag;
     _lastOfMultipleUpdateFlag = lastOfMultipleUpdateFlag;
@@ -63,30 +46,25 @@ SpectrumUpdateEvent::SpectrumUpdateEvent(const float* fftPoints,
     _droppedFFTFrames = droppedFFTFrames;
 }
 
-SpectrumUpdateEvent::~SpectrumUpdateEvent()
-{
-    delete[] _fftPoints;
-    delete[] _realDataTimeDomainPoints;
-    delete[] _imagDataTimeDomainPoints;
-}
+SpectrumUpdateEvent::~SpectrumUpdateEvent() {}
 
-const float* SpectrumUpdateEvent::getFFTPoints() const { return _fftPoints; }
+const float* SpectrumUpdateEvent::getFFTPoints() const { return d_fft_points.data(); }
 
 const double* SpectrumUpdateEvent::getRealTimeDomainPoints() const
 {
-    return _realDataTimeDomainPoints;
+    return d_real_data_time_domain_points.data();
 }
 
 const double* SpectrumUpdateEvent::getImagTimeDomainPoints() const
 {
-    return _imagDataTimeDomainPoints;
+    return d_imag_data_time_domain_points.data();
 }
 
-uint64_t SpectrumUpdateEvent::getNumFFTDataPoints() const { return _numFFTDataPoints; }
+uint64_t SpectrumUpdateEvent::getNumFFTDataPoints() const { return d_fft_points.size(); }
 
 uint64_t SpectrumUpdateEvent::getNumTimeDomainDataPoints() const
 {
-    return _numTimeDomainDataPoints;
+    return d_real_data_time_domain_points.size();
 }
 
 gr::high_res_timer_type SpectrumUpdateEvent::getDataTimestamp() const
@@ -150,7 +128,7 @@ double SpectrumFrequencyRangeEvent::GetStopFrequency() const { return _stopFrequ
 /***************************************************************************/
 
 
-TimeUpdateEvent::TimeUpdateEvent(const std::vector<double*> timeDomainPoints,
+TimeUpdateEvent::TimeUpdateEvent(const std::vector<volk::vector<double>> timeDomainPoints,
                                  const uint64_t numTimeDomainDataPoints,
                                  const std::vector<std::vector<gr::tag_t>> tags)
     : QEvent(QEvent::Type(SpectrumUpdateEventType))
@@ -161,12 +139,13 @@ TimeUpdateEvent::TimeUpdateEvent(const std::vector<double*> timeDomainPoints,
         _numTimeDomainDataPoints = numTimeDomainDataPoints;
     }
 
+    // TODO: make this whole thing a vector copy.
     _nplots = timeDomainPoints.size();
     for (size_t i = 0; i < _nplots; i++) {
         _dataTimeDomainPoints.push_back(new double[_numTimeDomainDataPoints]);
         if (numTimeDomainDataPoints > 0) {
             memcpy(_dataTimeDomainPoints[i],
-                   timeDomainPoints[i],
+                   timeDomainPoints[i].data(),
                    _numTimeDomainDataPoints * sizeof(double));
         }
     }
@@ -199,7 +178,7 @@ const std::vector<std::vector<gr::tag_t>> TimeUpdateEvent::getTags() const
 /***************************************************************************/
 
 
-FreqUpdateEvent::FreqUpdateEvent(const std::vector<double*> dataPoints,
+FreqUpdateEvent::FreqUpdateEvent(const std::vector<volk::vector<double>> dataPoints,
                                  const uint64_t numDataPoints)
     : QEvent(QEvent::Type(SpectrumUpdateEventType))
 {
@@ -210,10 +189,11 @@ FreqUpdateEvent::FreqUpdateEvent(const std::vector<double*> dataPoints,
     }
 
     _nplots = dataPoints.size();
+    // TODO: do a vector copy.
     for (size_t i = 0; i < _nplots; i++) {
         _dataPoints.push_back(new double[_numDataPoints]);
         if (numDataPoints > 0) {
-            memcpy(_dataPoints[i], dataPoints[i], _numDataPoints * sizeof(double));
+            memcpy(_dataPoints[i], dataPoints[i].data(), _numDataPoints * sizeof(double));
         }
     }
 }
@@ -247,8 +227,8 @@ double SetFreqEvent::getBandwidth() const { return _bandwidth; }
 /***************************************************************************/
 
 
-ConstUpdateEvent::ConstUpdateEvent(const std::vector<double*> realDataPoints,
-                                   const std::vector<double*> imagDataPoints,
+ConstUpdateEvent::ConstUpdateEvent(const std::vector<volk::vector<double>> realDataPoints,
+                                   const std::vector<volk::vector<double>> imagDataPoints,
                                    const uint64_t numDataPoints)
     : QEvent(QEvent::Type(SpectrumUpdateEventType))
 {
@@ -258,15 +238,18 @@ ConstUpdateEvent::ConstUpdateEvent(const std::vector<double*> realDataPoints,
         _numDataPoints = numDataPoints;
     }
 
+    // Todo: do vector copies.
     _nplots = realDataPoints.size();
     for (size_t i = 0; i < _nplots; i++) {
         _realDataPoints.push_back(new double[_numDataPoints]);
         _imagDataPoints.push_back(new double[_numDataPoints]);
         if (numDataPoints > 0) {
-            memcpy(
-                _realDataPoints[i], realDataPoints[i], _numDataPoints * sizeof(double));
-            memcpy(
-                _imagDataPoints[i], imagDataPoints[i], _numDataPoints * sizeof(double));
+            memcpy(_realDataPoints[i],
+                   realDataPoints[i].data(),
+                   _numDataPoints * sizeof(double));
+            memcpy(_imagDataPoints[i],
+                   imagDataPoints[i].data(),
+                   _numDataPoints * sizeof(double));
         }
     }
 }
@@ -295,9 +278,10 @@ uint64_t ConstUpdateEvent::getNumDataPoints() const { return _numDataPoints; }
 /***************************************************************************/
 
 
-WaterfallUpdateEvent::WaterfallUpdateEvent(const std::vector<double*> dataPoints,
-                                           const uint64_t numDataPoints,
-                                           const gr::high_res_timer_type dataTimestamp)
+WaterfallUpdateEvent::WaterfallUpdateEvent(
+    const std::vector<volk::vector<double>> dataPoints,
+    const uint64_t numDataPoints,
+    const gr::high_res_timer_type dataTimestamp)
     : QEvent(QEvent::Type(SpectrumUpdateEventType))
 {
     if (numDataPoints < 1) {
@@ -310,7 +294,7 @@ WaterfallUpdateEvent::WaterfallUpdateEvent(const std::vector<double*> dataPoints
     for (size_t i = 0; i < _nplots; i++) {
         _dataPoints.push_back(new double[_numDataPoints]);
         if (numDataPoints > 0) {
-            memcpy(_dataPoints[i], dataPoints[i], _numDataPoints * sizeof(double));
+            memcpy(_dataPoints[i], dataPoints[i].data(), _numDataPoints * sizeof(double));
         }
     }
 
@@ -337,8 +321,8 @@ gr::high_res_timer_type WaterfallUpdateEvent::getDataTimestamp() const
 /***************************************************************************/
 
 
-TimeRasterUpdateEvent::TimeRasterUpdateEvent(const std::vector<double*> dataPoints,
-                                             const uint64_t numDataPoints)
+TimeRasterUpdateEvent::TimeRasterUpdateEvent(
+    const std::vector<volk::vector<double>> dataPoints, const uint64_t numDataPoints)
     : QEvent(QEvent::Type(SpectrumUpdateEventType))
 {
     if (numDataPoints < 1) {
@@ -351,7 +335,7 @@ TimeRasterUpdateEvent::TimeRasterUpdateEvent(const std::vector<double*> dataPoin
     for (size_t i = 0; i < _nplots; i++) {
         _dataPoints.push_back(new double[_numDataPoints]);
         if (numDataPoints > 0) {
-            memcpy(_dataPoints[i], dataPoints[i], _numDataPoints * sizeof(double));
+            memcpy(_dataPoints[i], dataPoints[i].data(), _numDataPoints * sizeof(double));
         }
     }
 }
@@ -385,7 +369,7 @@ double TimeRasterSetSize::nCols() const { return _ncols; }
 /***************************************************************************/
 
 
-HistogramUpdateEvent::HistogramUpdateEvent(const std::vector<double*> points,
+HistogramUpdateEvent::HistogramUpdateEvent(const std::vector<volk::vector<double>> points,
                                            const uint64_t npoints)
     : QEvent(QEvent::Type(SpectrumUpdateEventType))
 {
@@ -399,7 +383,7 @@ HistogramUpdateEvent::HistogramUpdateEvent(const std::vector<double*> points,
     for (size_t i = 0; i < _nplots; i++) {
         _points.push_back(new double[_npoints]);
         if (npoints > 0) {
-            memcpy(_points[i], points[i], _npoints * sizeof(double));
+            memcpy(_points[i], points[i].data(), _npoints * sizeof(double));
         }
     }
 }

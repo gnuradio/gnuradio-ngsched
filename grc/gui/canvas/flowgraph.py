@@ -347,7 +347,22 @@ class FlowGraph(CoreFlowgraph, Drawable):
         Args:
             delta_coordinate: the change in coordinates
         """
-        for selected_block in self.selected_blocks():
+
+        # Determine selected blocks top left coordinate
+        blocks = list(self.selected_blocks())
+        if not blocks:
+            return
+
+        min_x, min_y  = self.selected_block.coordinate
+        for selected_block in blocks:
+            x, y = selected_block.coordinate
+            min_x, min_y = min(min_x, x), min(min_y, y)
+
+        # Sanitize delta_coordinate so that blocks don't move to negative coordinate
+        delta_coordinate = max(delta_coordinate[0],-min_x), max(delta_coordinate[1], -min_y)
+
+        # Move selected blocks     
+        for selected_block in blocks:
             selected_block.move(delta_coordinate)
             self.element_moved = True
 
@@ -493,6 +508,7 @@ class FlowGraph(CoreFlowgraph, Drawable):
     def _drawables(self):
         # todo: cache that
         show_comments = Actions.TOGGLE_SHOW_BLOCK_COMMENTS.get_active()
+        hide_disabled_blocks = Actions.TOGGLE_HIDE_DISABLED_BLOCKS.get_active()
         for element in self._elements_to_draw:
             if element.is_block and show_comments and element.enabled:
                 yield element.draw_comment
@@ -502,7 +518,8 @@ class FlowGraph(CoreFlowgraph, Drawable):
             if element not in self.selected_elements:
                 yield element.draw
         for element in self.selected_elements:
-            yield element.draw
+            if element.enabled or not hide_disabled_blocks:
+                yield element.draw
 
     def draw(self, cr):
         """Draw blocks connections comment and select rectangle"""

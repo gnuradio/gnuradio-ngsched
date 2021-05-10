@@ -20,8 +20,8 @@
 
 #include <gnuradio/logger.h>
 #include <gnuradio/prefs.h>
-#include <boost/make_unique.hpp>
 #include <algorithm>
+#include <memory>
 #include <stdexcept>
 
 namespace gr {
@@ -56,11 +56,10 @@ unsigned int logger_config::get_watch_period()
 // Method to watch config file for changes
 void logger_config::watch_file(std::string filename, unsigned int watch_period)
 {
-    std::time_t last_write(boost::filesystem::last_write_time(filename));
-    std::time_t current_time(0);
+    auto last_write = std::filesystem::last_write_time(filename);
     while (true) {
         try {
-            current_time = boost::filesystem::last_write_time(filename);
+            auto current_time = std::filesystem::last_write_time(filename);
             if (current_time > last_write) {
                 // std::cout<<"GNURadio Reloading logger
                 // configuration:"<<filename<<std::endl;
@@ -96,7 +95,7 @@ void logger_config::load_config(std::string filename, unsigned int watch_period)
         logger_configured = logger_load_config(instance.filename);
         // Start watch if required
         if (instance.watch_period > 0) {
-            instance.watch_thread = boost::make_unique<boost::thread>(
+            instance.watch_thread = std::make_unique<boost::thread>(
                 watch_file, instance.filename, instance.watch_period);
         }
     }
