@@ -60,11 +60,15 @@ add_library(gnuradio-runtime
   buffer_reader_sm.cc
   buffer_single_mapped.cc
   buffer_type.cc
+  buffer_type_lookup_table.cc
+  cuda_buffer.cc
   flat_flowgraph.cc
   flowgraph.cc
   hier_block2.cc
   hier_block2_detail.cc
   high_res_timer.cc
+  hip_buffer.cc
+  host_buffer.cc
   io_signature.cc
   local_sighandler.cc
   logger.cc
