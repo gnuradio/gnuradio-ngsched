@@ -69,7 +69,10 @@ jobs:
       
       # build volk
       - name: build_volk
-        run: mkdir -p volk && curl -Lo volk.tar.gz https://github.com/gnuradio/volk/archive/v2.1.0.tar.gz && tar xzf volk.tar.gz -C volk --strip-components=1 && cmake -DCMAKE_BUILD_TYPE=Release -S ./volk/ -B build && cd build && cmake --build . && sudo cmake --build . --target install && cd ../ && rm -rf build
+        # run: mkdir -p volk && curl -Lo volk.tar.gz https://github.com/gnuradio/volk/archive/v2.1.0.tar.gz && tar xzf volk.tar.gz -C volk --strip-components=1 && cmake -DCMAKE_BUILD_TYPE=Release -S ./volk/ -B build && cd build && cmake --build . && sudo cmake --build . --target install && cd ../ && rm -rf build
+        run: >
+          git clone --recursive https://github.com/gnuradio/volk.git volk --branch v2.4.1 &&
+          cd volk && cmake -DCMAKE_BUILD_TYPE=Release .. && make && make install 
       # configure
       - name: configure
         run: mkdir build && cd build && cmake .. -DENABLE_DOXYGEN=OFF -DENABLE_GR_AUDIO=OFF
