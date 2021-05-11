@@ -556,39 +556,6 @@ public:
 #endif
     }
 
-    /*!
-     * \brief Allocate a custom buffer for the block
-     *
-     * \details
-     * Blocks that wish to allocate custom buffers should override this function.
-     *
-     * \param size the size of the buffer to allocate in bytes
-     */
-    virtual char* allocate_custom_buffer(size_t size)
-    {
-#if DEBUG_SINGLE_MAPPED
-        return new char[size]();
-#else
-        return nullptr;
-#endif
-    }
-
-    /*!
-     * \brief Free a custom buffer previously allocated by allocate_custom_buffer()
-     *
-     * \details
-     * Blocks that wish to allocate custom buffers should override this function.
-     *
-     * \param buffer a pointer to the buffer
-     */
-    virtual void free_custom_buffer(char* buffer)
-    {
-#if DEBUG_SINGLE_MAPPED
-        delete[] buffer;
-#endif
-    }
-
-
     // --------------- Performance counter functions -------------
 
     /*!
