@@ -124,6 +124,21 @@ protected:
         return s;
     }
 
+    //
+    // The 'context' will control just how these buffers are used
+    // for example, if the current context is 'dev2host', then we
+    // will need to have some code like this:
+    //
+    //     cudaMemcpy(d_host_buffer, d_device_buffer, ...);
+    //
+    // If the current context is 'host2dev', then we will need to
+    // have some code like this:
+    //
+    //     cudaMemcpy(d_device_buffer, d_host_buffer, ...);
+    //
+    char * d_host_buffer;
+    char * d_device_buffer;
+
 private:
     friend class buffer_reader;
 

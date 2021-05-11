@@ -96,6 +96,33 @@ buffer_sptr make_buffer(int nitems,
     std::ostringstream msg;
 #endif
 
+    // we're not doing it this way since we have the buffer_type_lookup_table
+    // which maps buffer_type_t -> factory-function-for-that-type
+    //
+    // switch(buf_owner->get_buffer_type()) {
+    // case buffer_type_t::BUFFER_TYPE_HOST:
+    //     return buffer_sptr(new host_buffer(
+    //         nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner));
+    // case buffer_type_t::BUFFER_TYPE_CUDA:
+    //     return buffer_sptr(new cuda_buffer(
+    //         nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner));
+    // case buffer_type_t::BUFFER_TYPE_HIP:
+    //     return buffer_sptr(new hip_buffer(
+    //         nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner));
+    // default:
+    // {
+    //     ostringstream msg;
+    //     msg << "[" << this << "] "
+    //         << "error: unknown buffer_type_t: " << buf_owner->get_buffer_type();
+    //     GR_LOG_ERROR(logger, msg)
+    // }
+
+    // get the buffer_type_lookup_table instance
+    buffer_type_lookup_table* lut = buffer_type_lookup_table::get_instance();
+    func_ptr_t ffn = lut->lookup(buf_owner->get_buffer_type())();
+
+    return buffer_sptr(ffn(nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner);
+
 #if DEBUG_SINGLE_MAPPED
     if (1) {
 #else

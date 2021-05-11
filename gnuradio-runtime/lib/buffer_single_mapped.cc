@@ -121,7 +121,8 @@ bool buffer_single_mapped::allocate_buffer(int nitems,
     }
 
     // Allocate a new custom buffer from the owning block
-    char* buf = buf_owner()->allocate_custom_buffer(nitems * sizeof_item);
+    // ... to be removed ...
+    // char* buf = buf_owner()->allocate_custom_buffer(nitems * sizeof_item);
     assert(buf != nullptr);
     d_buffer.reset(buf);
 

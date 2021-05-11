@@ -17,6 +17,8 @@
 #include <gnuradio/runtime_types.h>
 #include <gnuradio/tags.h>
 #include <gnuradio/thread/thread.h>
+#include <gnuradio/buffer_context.h>
+
 #include <boost/weak_ptr.hpp>
 #include <iostream>
 #include <map>
@@ -232,6 +234,7 @@ private:
                                                                int nzero_preload,
                                                                block_sptr link,
                                                                int delay);
+    buffer_context d_buffer_context;
 
 protected:
     char* d_base;           // base address of buffer inside d_vmcircbuf.
@@ -309,6 +312,11 @@ protected:
      * \brief disassociate \p reader from this buffer
      */
     void drop_reader(buffer_reader* reader);
+
+    /*!
+     * \brief method to be executed after this object's owner completes the call to general_work()
+     */
+    virtual bool post_work(size_t nbytes) = 0;
 };
 
 //! returns # of buffers currently allocated
