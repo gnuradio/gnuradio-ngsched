@@ -46,6 +46,16 @@ public:
      * \brief return number of items worth of space available for writing
      */
     virtual int space_available();
+    
+    /*!
+     * Inherited from buffer class.
+     * @param nbytes
+     * @return 
+     */
+    virtual bool post_work(size_t nbytes)
+    {
+        return true;
+    }
 
 protected:
     /*!
@@ -75,7 +85,7 @@ protected:
         assert((unsigned)s < d_bufsize);
         return s;
     }
-
+    
 private:
     friend class buffer_reader;
 

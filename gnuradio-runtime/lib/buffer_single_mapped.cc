@@ -35,8 +35,7 @@ buffer_single_mapped::buffer_single_mapped(int nitems,
              downstream_lcm_nitems,
              link),
       d_buf_owner(buf_owner),
-      d_buffer(nullptr,
-               std::bind(&buffer_single_mapped::deleter, this, std::placeholders::_1))
+      d_buffer(nullptr)
 {
     gr::configure_default_loggers(d_logger, d_debug_logger, "buffer_single_mapped");
     if (!allocate_buffer(nitems, sizeof_item, downstream_lcm_nitems))
@@ -122,7 +121,8 @@ bool buffer_single_mapped::allocate_buffer(int nitems,
 
     // Allocate a new custom buffer from the owning block
     // ... to be removed ...
-    // char* buf = buf_owner()->allocate_custom_buffer(nitems * sizeof_item);
+//    char* buf = buf_owner()->allocate_custom_buffer(nitems * sizeof_item);
+    char* buf = new char[nitems * sizeof_item]; // temporary to make code compile
     assert(buf != nullptr);
     d_buffer.reset(buf);
 

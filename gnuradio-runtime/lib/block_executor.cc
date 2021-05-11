@@ -632,7 +632,7 @@ block_executor::state block_executor::run_one_iteration()
             goto were_done;
         }
 
-        // iterate over all of the outputs buffers and allow them to perform
+        // Iterate over all of the outputs buffers and allow them to perform
         // any necessary post-general_work() tasks
         for (int i = 0; i < d->noutputs(); i++) {
             d->output(i)->post_work(0);

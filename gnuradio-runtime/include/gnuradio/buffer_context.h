@@ -11,37 +11,18 @@
 #ifndef INCLUDED_GR_RUNTIME_BUFFER_CONTEXT_H
 #define INCLUDED_GR_RUNTIME_BUFFER_CONTEXT_H
 
-#include <gnuradio/api.h>
-#include <gnuradio/block.h>
-#include <gnuradio/buffer.h>
-#include <gnuradio/logger.h>
-#include <gnuradio/runtime_types.h>
+#include <ostream>
 
 namespace gr {
 
-    enum class buffer_context_t {
-        BUFFER_CONTEXT_HOST_TO_DEVICE,
-        BUFFER_CONTEXT_DEVICE_TO_HOST,
-        BUFFER_CONTEXT_HOST_TO_HOST,
-        BUFFER_CONTEXT_DEVICE_TO_DEVICE
+    enum class buffer_context {
+        HOST_TO_DEVICE,
+        DEVICE_TO_HOST,
+        HOST_TO_HOST,
+        DEVICE_TO_DEVICE
     };
 
-    std::ostream& operator<<(std::ostream& os, buffer_type_t buffer_type)
-    {
-        switch(buffer_type)
-        {
-        case buffer_type_t::BUFFER_CONTEXT_HOST_TO_DEVICE:
-            return os << "BUFFER_CONTEXT_HOST_TO_DEVICE";
-        case buffer_type_t::BUFFER_CONTEXT_DEVICE_TO_HOST:
-            return os << "BUFFER_CONTEXT_DEVICE_TO_HOST";
-        case buffer_type_t::BUFFER_CONTEXT_HOST_TO_HOST:
-            return os << "BUFFER_CONTEXT_HOST_TO_HOST";
-        case buffer_type_t::BUFFER_CONTEXT_DEVICE_TO_DEVICE:
-            return os << "BUFFER_CONTEXT_DEVICE_TO_DEVICE";
-        default:
-            return os << "unknown buffer type: " << int(buftype);
-        }
-    }
-
-
+    std::ostream& operator<<(std::ostream& os, buffer_context context);
 }
+
+#endif

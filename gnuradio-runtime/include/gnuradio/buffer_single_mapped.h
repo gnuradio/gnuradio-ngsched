@@ -16,6 +16,7 @@
 #include <gnuradio/api.h>
 #include <gnuradio/block.h>
 #include <gnuradio/buffer.h>
+#include <gnuradio/buffer_reader.h>
 #include <gnuradio/logger.h>
 #include <gnuradio/runtime_types.h>
 
@@ -80,7 +81,8 @@ public:
     {
         // Delegate free of the underlying buffer to the block that owns it
         if (ptr != nullptr)
-            buf_owner()->free_custom_buffer(ptr);
+            ;
+//            buf_owner()->free_custom_buffer(ptr);
     }
 
     /*!
@@ -136,10 +138,10 @@ protected:
     //
     //     cudaMemcpy(d_device_buffer, d_host_buffer, ...);
     //
-    char * d_host_buffer;
-    char * d_device_buffer;
+    char* d_host_buffer;
+    char* d_device_buffer;
 
-private:
+//private: // TEMPORARY? 
     friend class buffer_reader;
 
     friend GR_RUNTIME_API buffer_sptr make_buffer(int nitems,
@@ -150,7 +152,7 @@ private:
 
     block_sptr d_buf_owner; // block that "owns" this buffer
 
-    std::unique_ptr<char, std::function<void(char*)>> d_buffer;
+    std::unique_ptr<char> d_buffer;
 
     /*!
      * \brief constructor is private.  Use gr_make_buffer to create instances.

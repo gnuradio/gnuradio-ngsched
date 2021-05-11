@@ -20,6 +20,7 @@ install(FILES
   block_gateway.h
   block_registry.h
   buffer.h
+  buffer_context.h
   buffer_double_mapped.h
   buffer_reader.h
   buffer_reader_sm.h

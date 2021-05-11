@@ -208,34 +208,34 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
         buffer_type_t src_buf_type = src_grblock->get_buffer_type();
         buffer_type_t dest_buf_type = grblock->get_buffer_type();
 
-        buffer_context_t buffer_context;
-        if (str_buf_type == buf_DEFAULT_NON_CUSTOM::get() &&
+        buffer_context context;
+        if (src_buf_type  == buftype_DEFAULT_NON_CUSTOM::get() &&
             dest_buf_type == buftype_DEFAULT_NON_CUSTOM::get()) {
             // ---------------------------------------------------------------
             // host-to-host ... we probably want to disallow this one?
             // ---------------------------------------------------------------
-            buffer_context = BUFFER_CONTEXT_HOST_TO_HOST;
+            context = buffer_context::HOST_TO_HOST;
         }
-        else if (str_buf_type == !buf_DEFAULT_NON_CUSTOM::get() &&
+        else if (src_buf_type  != buftype_DEFAULT_NON_CUSTOM::get() &&
                  dest_buf_type == buftype_DEFAULT_NON_CUSTOM::get()) {
             // ---------------------------------------------------------------
             // device-to-host
             // ---------------------------------------------------------------
-            buffer_context = BUFFER_CONTEXT_DEVICE_TO_HOST;
+            context = buffer_context::DEVICE_TO_HOST;
         }
-        else if (str_buf_type == buf_DEFAULT_NON_CUSTOM::get() &&
-                 dest_buf_type == !buftype_DEFAULT_NON_CUSTOM::get()) {
+        else if (src_buf_type == buftype_DEFAULT_NON_CUSTOM::get() &&
+                 dest_buf_type != buftype_DEFAULT_NON_CUSTOM::get()) {
             // ---------------------------------------------------------------
             // host-to-device
             // ---------------------------------------------------------------
-            buffer_context = BUFFER_CONTEXT_HOST_TO_DEVICE;
+            context = buffer_context::HOST_TO_DEVICE;
         }
-        else if (str_buf_type == !buf_DEFAULT_NON_CUSTOM::get() &&
-                 dest_buf_type == !buftype_DEFAULT_NON_CUSTOM::get()) {
+        else if (src_buf_type  != buftype_DEFAULT_NON_CUSTOM::get() &&
+                 dest_buf_type != buftype_DEFAULT_NON_CUSTOM::get()) {
             // ---------------------------------------------------------------
             // device-to-device ... we may want to disallow this as well?
             // ---------------------------------------------------------------
-            buffer_context = BUFFER_CONTEXT_DEVICE_TO_DEVICE;
+            context = buffer_context::DEVICE_TO_DEVICE;
         }
 
 

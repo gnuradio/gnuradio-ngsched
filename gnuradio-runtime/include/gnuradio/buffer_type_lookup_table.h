@@ -14,6 +14,7 @@
 #include <map>
 using std::map;
 
+#include <gnuradio/buffer_context.h>
 #include <gnuradio/custom_lock.h>
 #include <gnuradio/thread/thread.h>
 #include <gnuradio/cuda_buffer.h>
@@ -24,8 +25,6 @@ using std::map;
 using std::cout;
 using std::endl;
 #include <mutex>
-using std::mutex;
-using std::unique_lock;
 
 /*!
  * \brief Thread-safe utility class used to map buffer contexts to factory functions
@@ -36,35 +35,14 @@ namespace gr {
 
 typedef int (*func_ptr_t)(int);
 
-enum class buffer_type_t {
+enum class buffer_type {
     BUFFER_TYPE_CUDA,
     BUFFER_TYPE_HIP,
     BUFFER_TYPE_HOST,
 };
 
-class buffer_type_lookup_table {
-
-private:
-    // private constructor
-    buffer_type_lookup_table() {
-        // here is where we need to populate the table with the
-        // latest mappings ...
-        d_map[BUFFER_TYPE_CUDA] = cuda_buffer::make_cuda_buffer;
-        d_map[BUFFER_TYPE_HIP]  = hip_buffer::make_hip_buffer;
-        d_map[BUFFER_TYPE_HOST] = host_buffer::make_host_buffer;
-        // add more ??
-    }
-
-    // explicitly disallow copy ctor and assignment operator
-    buffer_type_lookup_table(buffer_type_lookup_table const&) = delete; //!< copy ctor
-    void operator=(buffer_type_lookup_table const&) = delete; //!< assignment operator
-
-    // the map being wrapped
-    std::map<buffer_context_enum, func_ptr_t> d_map;
-
-    // mutex protecting operations on the map
-    gr::thread::mutex d_mutex;
-
+class buffer_type_lookup_table 
+{
 public:
     virtual ~buffer_type_lookup_table() {}
 
@@ -74,6 +52,7 @@ public:
      */
     static buffer_type_lookup_table* get_instance();
 
+#if 0
     /*!
      * \brief Insert a new mapping (enum->func_ptr)
      *
@@ -91,8 +70,6 @@ public:
     //     true if the insert operation was successful, false otherwise
     // -----------------------------------------------------------------------
     bool insert(buffer_context_enum e, func_ptr_t fn);
-
-
 
     /*!
      * \brief Lookup and return the function pointer asscociated with 'e'
@@ -129,6 +106,29 @@ public:
     //     given 'e', false otherwise
     // -----------------------------------------------------------------------
     bool erase(buffer_context_enum e);
+#endif
+    
+private:
+    
+    // private constructor
+    buffer_type_lookup_table() {
+        // here is where we need to populate the table with the
+        // latest mappings ...
+//        d_map[BUFFER_TYPE_CUDA] = cuda_buffer::make_cuda_buffer;
+//        d_map[BUFFER_TYPE_HIP]  = hip_buffer::make_hip_buffer;
+//        d_map[BUFFER_TYPE_HOST] = host_buffer::make_host_buffer;
+        // add more ??
+    }
+
+    // explicitly disallow copy ctor and assignment operator
+    buffer_type_lookup_table(buffer_type_lookup_table const&) = delete; //!< copy ctor
+    void operator=(buffer_type_lookup_table const&) = delete; //!< assignment operator
+
+    // the map being wrapped
+    std::map<buffer_context, func_ptr_t> d_map;
+
+    // mutex protecting operations on the map
+    gr::thread::mutex d_mutex;
 };
 
 } /* namespace gr */

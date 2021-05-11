@@ -12,12 +12,12 @@
 #define INCLUDED_GR_RUNTIME_BUFFER_H
 
 #include <gnuradio/api.h>
+#include <gnuradio/buffer_context.h>
 #include <gnuradio/custom_lock.h>
 #include <gnuradio/logger.h>
 #include <gnuradio/runtime_types.h>
 #include <gnuradio/tags.h>
 #include <gnuradio/thread/thread.h>
-#include <gnuradio/buffer_context.h>
 
 #include <boost/weak_ptr.hpp>
 #include <iostream>
@@ -167,6 +167,12 @@ public:
     {
         return d_item_tags.upper_bound(x);
     }
+    
+    /*!
+     * \brief Function to be executed after this object's owner completes the 
+     * call to general_work()
+     */
+    virtual bool post_work(size_t nbytes) = 0;
 
     /*!
      * \brief Returns true if the current thread is ready to execute
@@ -312,11 +318,6 @@ protected:
      * \brief disassociate \p reader from this buffer
      */
     void drop_reader(buffer_reader* reader);
-
-    /*!
-     * \brief method to be executed after this object's owner completes the call to general_work()
-     */
-    virtual bool post_work(size_t nbytes) = 0;
 };
 
 //! returns # of buffers currently allocated

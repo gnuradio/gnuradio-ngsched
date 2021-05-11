@@ -7,23 +7,24 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  */
+#include <gnuradio/buffer_context.h>
 
 namespace gr {
 
-std::ostream& operator<<(std::ostream& os, buffer_type_t buffer_type)
+std::ostream& operator<<(std::ostream& os, buffer_context context)
 {
-    switch(buffer_type)
+    switch (context)
     {
-    case buffer_type_t::BUFFER_CONTEXT_HOST_TO_DEVICE:
-        return os << "BUFFER_CONTEXT_HOST_TO_DEVICE";
-    case buffer_type_t::BUFFER_CONTEXT_DEVICE_TO_HOST:
-        return os << "BUFFER_CONTEXT_DEVICE_TO_HOST";
-    case buffer_type_t::BUFFER_CONTEXT_HOST_TO_HOST:
-        return os << "BUFFER_CONTEXT_HOST_TO_HOST";
-    case buffer_type_t::BUFFER_CONTEXT_DEVICE_TO_DEVICE:
-        return os << "BUFFER_CONTEXT_DEVICE_TO_DEVICE";
-    default:
-        return os << "unknown buffer type: " << int(buftype);
+        case buffer_context::HOST_TO_DEVICE:
+            return os << "HOST_TO_DEVICE";
+        case buffer_context::DEVICE_TO_HOST:
+            return os << "DEVICE_TO_HOST";
+        case buffer_context::HOST_TO_HOST:
+            return os << "HOST_TO_HOST";
+        case buffer_context::DEVICE_TO_DEVICE:
+            return os << "DEVICE_TO_DEVICE";
+        default:
+            return os << "Unknown buffer context: " << static_cast<int>(context);
     }
 }
 

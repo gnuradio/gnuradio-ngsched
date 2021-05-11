@@ -17,6 +17,36 @@ namespace gr {
 
 class GR_RUNTIME_API host_buffer : public buffer_single_mapped
 {
+public:
+    
+    virtual ~host_buffer();
+    
+    /*!
+     * \brief Handle post-general_work() cleanup and data transfer
+     *
+     * Called directly after call to general_work() completes and
+     * is used for data transfer (and perhaps other administrative
+     * activities)
+     *
+     * \param nitems is the minimum number of items the buffer will hold.
+     */
+    bool post_work(size_t nitems);
+
+    /*!
+     * \brief Creates a new host_buffer object
+     *
+     * \param nitems
+     * \param sizeof_item
+     * \param downstream_lcm_nitems
+     * \param link
+     *
+     * \return pointer to buffer base class
+     */
+    buffer* make_host_buffer(int nitems,
+                             size_t sizeof_item,
+                             uint64_t downstream_lcm_nitems,
+                             block_sptr link);
+    
 private:
     /*!
      * \brief constructor is private.  Use gr_make_buffer to create instances.
@@ -41,34 +71,6 @@ private:
                 block_sptr link,
                 block_sptr buf_owner);
 
-    virtual ~host_buffer();
-
-public:
-    /*!
-     * \brief Handle post-general_work() cleanup and data transfer
-     *
-     * Called directly after call to general_work() completes and
-     * is used for data transfer (and perhaps other administrative
-     * activities)
-     *
-     * \param nitems is the minimum number of items the buffer will hold.
-     */
-    bool post_work(size_t nitems);
-
-    /*!
-     * \brief Creates a new host_buffer object
-     *
-     * \param nitems
-     * \param sizeof_item
-     * \param downstream_lcm_nitems
-     * \param link
-     *
-     * \return pointer to buffer base class
-     */
-     buffer * make_host_buffer(int nitems,
-                               size_t sizeof_item,
-                               uint64_t downstream_lcm_nitems,
-                               block_sptr link);
 };
 
 } /* namespace gr */

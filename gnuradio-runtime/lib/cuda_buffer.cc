@@ -8,31 +8,31 @@
  *
  */
 
-// debugging
-#include <iostream>
-using std::endl;
-using std::cout;
-
 #include <gnuradio/cuda_buffer.h>
 
 namespace gr {
 
-cuda_buffer::cuda_buffer(BufferMappingType buf_type,
-                         int nitems,
+cuda_buffer::cuda_buffer(int nitems,
                          size_t sizeof_item,
                          uint64_t downstream_lcm_nitems,
-                         block_sptr link)
-    : buffer_single_mapped(buf_type,
-                           nitems,
+                         block_sptr link,
+                         block_sptr buf_owner)
+    : buffer_single_mapped(nitems,
                            sizeof_item,
                            downstream_lcm_nitems,
-                           link)
+                           link,
+                           buf_owner)
 {
-    cout << "**** cuda_buffer ctor" << endl;
+}
+
+cuda_buffer::~cuda_buffer()
+{
 }
 
 bool cuda_buffer::post_work(size_t nitems)
 {
+#if 0
+
     switch(this->get_buffer_context()) {
     case BUFFER_CONTEXT_HOST_TO_DEVICE:
     {
@@ -57,16 +57,16 @@ bool cuda_buffer::post_work(size_t nitems)
         return false;
         break;
     }
-
+#endif
     return true;
 }
 
-buffer* cuda_buffer::make_host_buffer(int nitems,
+buffer* cuda_buffer::make_cuda_buffer(int nitems,
                                       size_t sizeof_item,
                                       uint64_t downstream_lcm_nitems,
                                       block_sptr link)
 {
-    return new cuda_buffer(nitems, sizeof_item, downstream_lcm_nitems, link);
+    return new cuda_buffer(nitems, sizeof_item, downstream_lcm_nitems, link, link);
 }
 
 }

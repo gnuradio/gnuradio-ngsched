@@ -12,6 +12,7 @@
 
 namespace gr {
 
+#if 0
 // NB: This buffer_type_t doesn't match the pre-existing buffer_type_t
 //     since this type is an enum class and the pre-existing type
 //     is a plain old object
@@ -32,6 +33,7 @@ std::ostream& operator<<(std::ostream& os, buffer_type_t buffer_type)
         return os << "BUFFER TYPE UNKNOWN: " << int(buftype)
     }
 }
+#endif
 
 buffer_type_lookup_table* buffer_type_lookup_table::get_instance()
 {
@@ -39,6 +41,7 @@ buffer_type_lookup_table* buffer_type_lookup_table::get_instance()
     return &instance;
 }
 
+#if 0
 bool buffer_type_lookup_table::insert(buffer_type_t buffer_type,
                                       func_ptr_t(*fn)(int))
 {
@@ -90,5 +93,6 @@ bool buffer_type_lookup_table::erase(buffer_type_t buffer_type)
         return false;
     }
 }
+#endif
 
 } /* namespace gr */
