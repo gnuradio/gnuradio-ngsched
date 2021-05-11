@@ -134,6 +134,7 @@ void flat_flowgraph::allocate_block_detail(basic_block_sptr block)
                                     (uint64_t)(dgrblock->fixed_rate_noutput_to_ninput(1) -
                                                (dgrblock->history() - 1)));
             }
+
             if (dgrblock->relative_rate() != 1.0) {
                 // Relative rate
                 lcm_nitems = GR_LCM(lcm_nitems, dgrblock->relative_rate_d());
@@ -192,9 +193,52 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
         if (!src_grblock)
             throw std::runtime_error("connect_block_inputs found non-gr::block");
 
+        // -------------------------------------------------------------------
+        // In order to determine the buffer context, we need to examine both
+        // the upstream and the downstream buffer_types
+        //
+        //  upstream               downstream            buffer_context
+        // -------------------------------------------------------------------
+        //  buf_DEF_NON_CUSTOM     buf_DEF_NON_CUSTOM    h->h
+        // !buf_DEF_NON_CUSTOM     buf_DEF_NON_CUSTOM    d->h
+        //  buf_DEF_NON_CUSTOM    !buf_DEF_NON_CUSTOM    h->d
+        // !buf_DEF_NON_CUSTOM    !buf_DEF_NON_CUSTOM    d->d
+        // -------------------------------------------------------------------
         buffer_sptr src_buffer;
         buffer_type_t src_buf_type = src_grblock->get_buffer_type();
         buffer_type_t dest_buf_type = grblock->get_buffer_type();
+
+        buffer_context_t buffer_context;
+        if (str_buf_type == buf_DEFAULT_NON_CUSTOM::get() &&
+            dest_buf_type == buftype_DEFAULT_NON_CUSTOM::get()) {
+            // ---------------------------------------------------------------
+            // host-to-host ... we probably want to disallow this one?
+            // ---------------------------------------------------------------
+            buffer_context = BUFFER_CONTEXT_HOST_TO_HOST;
+        }
+        else if (str_buf_type == !buf_DEFAULT_NON_CUSTOM::get() &&
+                 dest_buf_type == buftype_DEFAULT_NON_CUSTOM::get()) {
+            // ---------------------------------------------------------------
+            // device-to-host
+            // ---------------------------------------------------------------
+            buffer_context = BUFFER_CONTEXT_DEVICE_TO_HOST;
+        }
+        else if (str_buf_type == buf_DEFAULT_NON_CUSTOM::get() &&
+                 dest_buf_type == !buftype_DEFAULT_NON_CUSTOM::get()) {
+            // ---------------------------------------------------------------
+            // host-to-device
+            // ---------------------------------------------------------------
+            buffer_context = BUFFER_CONTEXT_HOST_TO_DEVICE;
+        }
+        else if (str_buf_type == !buf_DEFAULT_NON_CUSTOM::get() &&
+                 dest_buf_type == !buftype_DEFAULT_NON_CUSTOM::get()) {
+            // ---------------------------------------------------------------
+            // device-to-device ... we may want to disallow this as well?
+            // ---------------------------------------------------------------
+            buffer_context = BUFFER_CONTEXT_DEVICE_TO_DEVICE;
+        }
+
+
         if (dest_buf_type == buftype_DEFAULT_NON_CUSTOM::get() ||
             dest_buf_type == src_buf_type) {
             // The block is not using a custom buffer OR the block and the upstream
