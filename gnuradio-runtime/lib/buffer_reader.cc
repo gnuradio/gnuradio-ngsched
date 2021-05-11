@@ -38,7 +38,6 @@ buffer_add_reader(buffer_sptr buf, int nzero_preload, block_sptr link, int delay
         r.reset(new buffer_reader(
             buf, buf->index_sub(buf->d_write_index, nzero_preload), link));
         r->declare_sample_delay(delay);
-        buf->update_reader_block_history(link->history(), delay);
     } else if (buf->get_mapping_type() == BufferMappingType::SingleMapped) {
         r.reset(new buffer_reader_sm(
             buf, buf->index_sub(buf->d_write_index, nzero_preload), link));

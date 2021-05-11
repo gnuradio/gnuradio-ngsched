@@ -21,6 +21,16 @@ namespace gr {
 class vmcircbuf;
 
 /*!
+ * \brief Note this function is only used and really intended to be used in
+ *  qa_buffer.cc for the unit tests of buffer_double_mapped.
+ *
+ */
+GR_RUNTIME_API buffer_sptr make_buffer_double_mapped(int nitems,
+                                                     size_t sizeof_item,
+                                                     uint64_t downstream_lcm_nitems,
+                                                     block_sptr link = block_sptr());
+
+/*!
  * \brief Single writer, multiple reader fifo.
  * \ingroup internal
  */
@@ -74,6 +84,8 @@ private:
                                                   uint64_t downstream_lcm_nitems,
                                                   block_sptr link,
                                                   block_sptr buf_owner);
+    friend GR_RUNTIME_API buffer_sptr make_buffer_double_mapped(
+        int nitems, size_t sizeof_item, uint64_t downstream_lcm_nitems, block_sptr link);
 
     std::unique_ptr<gr::vmcircbuf> d_vmcircbuf;
 

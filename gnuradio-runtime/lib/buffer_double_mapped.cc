@@ -62,6 +62,15 @@ buffer_double_mapped::buffer_double_mapped(int nitems,
 #endif
 }
 
+buffer_sptr make_buffer_double_mapped(int nitems,
+                                      size_t sizeof_item,
+                                      uint64_t downstream_lcm_nitems,
+                                      block_sptr link)
+{
+    return buffer_sptr(
+        new buffer_double_mapped(nitems, sizeof_item, downstream_lcm_nitems, link));
+}
+
 buffer_double_mapped::~buffer_double_mapped() {}
 
 /*!
