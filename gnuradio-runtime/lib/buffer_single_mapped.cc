@@ -29,7 +29,7 @@ buffer_single_mapped::buffer_single_mapped(int nitems,
                                            uint64_t downstream_lcm_nitems,
                                            block_sptr link,
                                            block_sptr buf_owner)
-    : buffer(BufferMappingType::SingleMapped,
+    : buffer(buffer_mapping_type::single_mapped,
              nitems,
              sizeof_item,
              downstream_lcm_nitems,
@@ -119,20 +119,14 @@ bool buffer_single_mapped::allocate_buffer(int nitems,
 #endif
     }
 
-    // Allocate a new custom buffer from the owning block
-    // ... to be removed ...
-//    char* buf = buf_owner()->allocate_custom_buffer(nitems * sizeof_item);
-    char* buf = new char[nitems * sizeof_item]; // temporary to make code compile
-    assert(buf != nullptr);
-    d_buffer.reset(buf);
-
-    d_base = d_buffer.get();
+//    d_base = d_buffer.get();
     d_bufsize = nitems;
 
     d_downstream_lcm_nitems = downstream_lcm_nitems;
     d_write_multiple = write_granularity;
-
-    return true;
+    
+    // Do the actual allocation(s) with the finalized nitems
+    return do_allocate_buffer(nitems, sizeof_item);
 }
 
 bool buffer_single_mapped::output_blkd_cb_ready(int output_multiple)

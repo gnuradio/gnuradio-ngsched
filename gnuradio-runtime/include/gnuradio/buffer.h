@@ -12,6 +12,7 @@
 #define INCLUDED_GR_RUNTIME_BUFFER_H
 
 #include <gnuradio/api.h>
+#include <gnuradio/block.h>
 #include <gnuradio/buffer_context.h>
 #include <gnuradio/custom_lock.h>
 #include <gnuradio/logger.h>
@@ -31,7 +32,7 @@ class vmcircbuf;
 class buffer_reader;
 class buffer_reader_sm;
 
-enum class BufferMappingType { DoubleMapped, SingleMapped };
+enum class buffer_mapping_type { double_mapped, single_mapped };
 
 /*!
  * \brief Allocate a buffer that holds at least \p nitems of size \p sizeof_item.
@@ -65,7 +66,7 @@ public:
     /*!
      * \brief return the buffer's mapping type
      */
-    BufferMappingType get_mapping_type() { return d_buf_map_type; }
+    buffer_mapping_type get_mapping_type() { return d_buf_map_type; }
 
     /*!
      * \brief return number of items worth of space available for writing
@@ -227,6 +228,31 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const buffer& buf);
 
     // -------------------------------------------------------------------------
+    
+    /*!
+     * \brief assign buffer context
+     */
+    void set_context(const buffer_context& context)
+    {
+        if ((d_context == buffer_context::DEFAULT_INVALID) ||
+            (d_context == context))    
+        {
+            // Set the context if the existing value is the default or if
+            // it is the same
+            d_context = context;
+        }
+        else
+        {
+            // Otherwise error out as the context value cannot be changed after
+            // it is set
+            std::ostringstream msg;
+            msg << "Block: " << link()->identifier() << " has context "
+                << d_context << " assigned. Cannot change to context " 
+                <<  context << ".";
+            GR_LOG_ERROR(d_logger, msg.str());
+            throw std::runtime_error(msg.str());
+        }
+    }
 
 private:
     friend class buffer_reader;
@@ -240,12 +266,12 @@ private:
                                                                int nzero_preload,
                                                                block_sptr link,
                                                                int delay);
-    buffer_context d_buffer_context;
+    buffer_context d_context;
 
 protected:
     char* d_base;           // base address of buffer inside d_vmcircbuf.
     unsigned int d_bufsize; // in items
-    BufferMappingType d_buf_map_type;
+    buffer_mapping_type d_buf_map_type;
 
     // Keep track of maximum sample delay of any reader; Only prune tags past this.
     unsigned d_max_reader_delay;
@@ -308,7 +334,7 @@ protected:
      * dependent boundary.  This is typically the system page size, but
      * under MS windows is 64KB.
      */
-    buffer(BufferMappingType buftype,
+    buffer(buffer_mapping_type buftype,
            int nitems,
            size_t sizeof_item,
            uint64_t downstream_lcm_nitems,

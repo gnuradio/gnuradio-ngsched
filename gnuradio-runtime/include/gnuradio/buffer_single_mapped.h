@@ -77,14 +77,6 @@ public:
         }
     }
 
-    void deleter(char* ptr)
-    {
-        // Delegate free of the underlying buffer to the block that owns it
-        if (ptr != nullptr)
-            ;
-//            buf_owner()->free_custom_buffer(ptr);
-    }
-
     /*!
      * \brief Return true if thread is ready to call the callback, false otherwise
      */
@@ -98,10 +90,17 @@ public:
 
 protected:
     /*!
-     * sets d_base, d_bufsize.
-     * returns true iff successful.
+     * \brief Make reasonable attempt to adjust nitems based on read/write 
+     * granularity then delegate actual allocation to do_allocate_buffer().
+     * @return true iff successful.
      */
-    bool allocate_buffer(int nitems, size_t sizeof_item, uint64_t downstream_lcm_nitems);
+    virtual bool allocate_buffer(int nitems, size_t sizeof_item, 
+                                 uint64_t downstream_lcm_nitems);
+    
+    /*!
+     * \brief Do actual buffer allocation
+     */
+    virtual bool do_allocate_buffer(int final_nitems, size_t sizeof_item) = 0;
 
     virtual unsigned index_add(unsigned a, unsigned b)
     {
@@ -126,22 +125,7 @@ protected:
         return s;
     }
 
-    //
-    // The 'context' will control just how these buffers are used
-    // for example, if the current context is 'dev2host', then we
-    // will need to have some code like this:
-    //
-    //     cudaMemcpy(d_host_buffer, d_device_buffer, ...);
-    //
-    // If the current context is 'host2dev', then we will need to
-    // have some code like this:
-    //
-    //     cudaMemcpy(d_device_buffer, d_host_buffer, ...);
-    //
-    char* d_host_buffer;
-    char* d_device_buffer;
 
-//private: // TEMPORARY? 
     friend class buffer_reader;
 
     friend GR_RUNTIME_API buffer_sptr make_buffer(int nitems,

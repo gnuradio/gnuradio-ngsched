@@ -63,14 +63,14 @@ protected:
     }
 };
 
-typedef const buffer_type_base& buffer_type_t;
+typedef const buffer_type_base& buffer_type;
 
 
 #define MAKE_CUSTOM_BUFFER_TYPE(CLASSNAME)                             \
     class GR_RUNTIME_API buftype_##CLASSNAME : public buffer_type_base \
     {                                                                  \
     public:                                                            \
-        static buffer_type_t get()                                     \
+        static buffer_type get()                                       \
         {                                                              \
             static buftype_##CLASSNAME instance;                       \
             return instance;                                           \

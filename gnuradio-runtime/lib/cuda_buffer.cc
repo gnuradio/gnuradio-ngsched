@@ -61,6 +61,12 @@ bool cuda_buffer::post_work(size_t nitems)
     return true;
 }
 
+bool cuda_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)
+{
+    d_buffer.reset(new char[final_nitems * sizeof_item]);
+    return true;
+}
+    
 buffer* cuda_buffer::make_cuda_buffer(int nitems,
                                       size_t sizeof_item,
                                       uint64_t downstream_lcm_nitems,

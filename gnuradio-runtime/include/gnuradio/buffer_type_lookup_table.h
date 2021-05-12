@@ -35,13 +35,7 @@ namespace gr {
 
 typedef int (*func_ptr_t)(int);
 
-enum class buffer_type {
-    BUFFER_TYPE_CUDA,
-    BUFFER_TYPE_HIP,
-    BUFFER_TYPE_HOST,
-};
-
-class buffer_type_lookup_table 
+class buffer_type_lookup_table
 {
 public:
     virtual ~buffer_type_lookup_table() {}

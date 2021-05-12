@@ -193,52 +193,30 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
         if (!src_grblock)
             throw std::runtime_error("connect_block_inputs found non-gr::block");
 
-        // -------------------------------------------------------------------
         // In order to determine the buffer context, we need to examine both
         // the upstream and the downstream buffer_types
-        //
-        //  upstream               downstream            buffer_context
-        // -------------------------------------------------------------------
-        //  buf_DEF_NON_CUSTOM     buf_DEF_NON_CUSTOM    h->h
-        // !buf_DEF_NON_CUSTOM     buf_DEF_NON_CUSTOM    d->h
-        //  buf_DEF_NON_CUSTOM    !buf_DEF_NON_CUSTOM    h->d
-        // !buf_DEF_NON_CUSTOM    !buf_DEF_NON_CUSTOM    d->d
-        // -------------------------------------------------------------------
-        buffer_sptr src_buffer;
-        buffer_type_t src_buf_type = src_grblock->get_buffer_type();
-        buffer_type_t dest_buf_type = grblock->get_buffer_type();
+        buffer_type src_buf_type = src_grblock->get_buffer_type();
+        buffer_type dest_buf_type = grblock->get_buffer_type();
 
         buffer_context context;
         if (src_buf_type  == buftype_DEFAULT_NON_CUSTOM::get() &&
             dest_buf_type == buftype_DEFAULT_NON_CUSTOM::get()) {
-            // ---------------------------------------------------------------
-            // host-to-host ... we probably want to disallow this one?
-            // ---------------------------------------------------------------
             context = buffer_context::HOST_TO_HOST;
         }
         else if (src_buf_type  != buftype_DEFAULT_NON_CUSTOM::get() &&
                  dest_buf_type == buftype_DEFAULT_NON_CUSTOM::get()) {
-            // ---------------------------------------------------------------
-            // device-to-host
-            // ---------------------------------------------------------------
             context = buffer_context::DEVICE_TO_HOST;
         }
-        else if (src_buf_type == buftype_DEFAULT_NON_CUSTOM::get() &&
+        else if (src_buf_type  == buftype_DEFAULT_NON_CUSTOM::get() &&
                  dest_buf_type != buftype_DEFAULT_NON_CUSTOM::get()) {
-            // ---------------------------------------------------------------
-            // host-to-device
-            // ---------------------------------------------------------------
             context = buffer_context::HOST_TO_DEVICE;
         }
         else if (src_buf_type  != buftype_DEFAULT_NON_CUSTOM::get() &&
                  dest_buf_type != buftype_DEFAULT_NON_CUSTOM::get()) {
-            // ---------------------------------------------------------------
-            // device-to-device ... we may want to disallow this as well?
-            // ---------------------------------------------------------------
             context = buffer_context::DEVICE_TO_DEVICE;
         }
 
-
+        buffer_sptr src_buffer;
         if (dest_buf_type == buftype_DEFAULT_NON_CUSTOM::get() ||
             dest_buf_type == src_buf_type) {
             // The block is not using a custom buffer OR the block and the upstream
@@ -246,7 +224,7 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
             src_buffer = src_grblock->detail()->output(src_port);
         } else {
             if (dest_buf_type != buftype_DEFAULT_NON_CUSTOM::get() &&
-                src_buf_type == buftype_DEFAULT_NON_CUSTOM::get()) {
+                src_buf_type  == buftype_DEFAULT_NON_CUSTOM::get()) {
                 // The block uses a custom buffer but the upstream block does not
                 // therefore the upstream block's buffer can be replaced with the
                 // type of buffer that the block needs
@@ -269,6 +247,9 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
                 throw std::runtime_error(msg.str());
             }
         }
+        
+        // Set buffer's context
+        src_buffer->set_context(context);
 
         GR_LOG_DEBUG(d_debug_logger,
                      "Setting input " + std::to_string(dst_port) + " from edge " +

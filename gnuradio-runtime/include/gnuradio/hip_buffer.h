@@ -31,6 +31,11 @@ public:
      * \param nitems is the minimum number of items the buffer will hold.
      */
     bool post_work(size_t nitems);
+    
+    /*!
+     * \brief Do actual buffer allocation. Inherited from buffer_single_mapped.
+     */
+    bool do_allocate_buffer(int final_nitems, size_t sizeof_item);
 
     /*!
      * \brief Creates a new hip_buffer object

@@ -15,6 +15,8 @@ std::ostream& operator<<(std::ostream& os, buffer_context context)
 {
     switch (context)
     {
+        case buffer_context::DEFAULT_INVALID:
+            return os << "DEFAULT_INVALID";
         case buffer_context::HOST_TO_DEVICE:
             return os << "HOST_TO_DEVICE";
         case buffer_context::DEVICE_TO_HOST:

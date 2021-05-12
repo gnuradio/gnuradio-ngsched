@@ -41,7 +41,7 @@ buffer_double_mapped::buffer_double_mapped(int nitems,
                                            size_t sizeof_item,
                                            uint64_t downstream_lcm_nitems,
                                            block_sptr link)
-    : buffer(BufferMappingType::DoubleMapped,
+    : buffer(buffer_mapping_type::double_mapped,
              nitems,
              sizeof_item,
              downstream_lcm_nitems,

@@ -547,7 +547,7 @@ public:
      * \details
      * Blocks that wish to allocate custom buffers should override this function.
      */
-    virtual buffer_type_t get_buffer_type()
+    virtual buffer_type get_buffer_type()
     {
 #if DEBUG_SINGLE_MAPPED
         return buftype_CUSTOM_HOST::get();

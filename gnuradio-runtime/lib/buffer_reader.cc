@@ -34,11 +34,11 @@ buffer_add_reader(buffer_sptr buf, int nzero_preload, block_sptr link, int delay
 
     buffer_reader_sptr r;
 
-    if (buf->get_mapping_type() == BufferMappingType::DoubleMapped) {
+    if (buf->get_mapping_type() == buffer_mapping_type::double_mapped) {
         r.reset(new buffer_reader(
             buf, buf->index_sub(buf->d_write_index, nzero_preload), link));
         r->declare_sample_delay(delay);
-    } else if (buf->get_mapping_type() == BufferMappingType::SingleMapped) {
+    } else if (buf->get_mapping_type() == buffer_mapping_type::single_mapped) {
         r.reset(new buffer_reader_sm(
             buf, buf->index_sub(buf->d_write_index, nzero_preload), link));
         r->declare_sample_delay(delay);

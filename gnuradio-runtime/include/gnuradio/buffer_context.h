@@ -16,12 +16,13 @@
 namespace gr {
 
     enum class buffer_context {
+        DEFAULT_INVALID,
         HOST_TO_DEVICE,
         DEVICE_TO_HOST,
         HOST_TO_HOST,
         DEVICE_TO_DEVICE
     };
-
+    
     std::ostream& operator<<(std::ostream& os, buffer_context context);
 }
 
