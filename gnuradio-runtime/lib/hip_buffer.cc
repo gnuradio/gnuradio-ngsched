@@ -39,19 +39,19 @@ hip_buffer::~hip_buffer()
 bool hip_buffer::post_work(size_t nsize)
 {
 #if 0
-    switch(this->get_buffer_context()) {
-    case BUFFER_CONTEXT_HOST_TO_DEVICE:
+    switch(get_buffer_context()) {
+    case buffer_context::HOST_TO_DEVICE:
     {
         hipMemcpy(d_device_buffer, d_host_buffer, ...);
         break;
     }
-    case BUFFER_CONTEXT_DEVICE_TO_HOST:
+    case buffer_context::DEVICE_TO_HOST:
     {
         hipMemcpy(d_host_buffer, d_device_buffer, ...);
         break;
     }
-    case BUFFER_CONTEXT_HOST_TO_HOST:
-    case BUFFER_CONTEXT_DEVICE_TO_DEVICE:
+    case buffer_context::HOST_TO_HOST:
+    case buffer_context::DEVICE_TO_DEVICE:
     default:
     {
         // print warning message/throw exception/return false?
@@ -73,12 +73,14 @@ bool hip_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)
     return true;
 }
 
-buffer* hip_buffer::make_hip_buffer(int nitems,
+buffer_sptr hip_buffer::make_hip_buffer(int nitems,
                                     size_t sizeof_item,
                                     uint64_t downstream_lcm_nitems,
-                                    block_sptr link)
+                                    block_sptr link,
+                                    block_sptr buf_owner)
 {
-    return new hip_buffer(nitems, sizeof_item, downstream_lcm_nitems, link, link);
+    return buffer_sptr(new hip_buffer(nitems, sizeof_item, downstream_lcm_nitems,
+                                      link, buf_owner));
 }
 
 }

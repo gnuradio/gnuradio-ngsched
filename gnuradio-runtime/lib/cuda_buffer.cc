@@ -32,20 +32,19 @@ cuda_buffer::~cuda_buffer()
 bool cuda_buffer::post_work(size_t nitems)
 {
 #if 0
-
-    switch(this->get_buffer_context()) {
-    case BUFFER_CONTEXT_HOST_TO_DEVICE:
+    switch(get_buffer_context()) {
+    case buffer_context::HOST_TO_DEVICE:
     {
         cudaMemcpy(d_device_buffer, d_host_buffer, ...);
         break;
     }
-    case BUFFER_CONTEXT_DEVICE_TO_HOST:
+    case buffer_context::DEVICE_TO_HOST:
     {
         cudaMemcpy(d_host_buffer, d_device_buffer, ...);
         break;
     }
-    case BUFFER_CONTEXT_HOST_TO_HOST:
-    case BUFFER_CONTEXT_DEVICE_TO_DEVICE:
+    case buffer_context::HOST_TO_HOST:
+    case buffer_context::DEVICE_TO_DEVICE:
     default:
     {
         // print warning message/throw exception/return false?
@@ -58,21 +57,18 @@ bool cuda_buffer::post_work(size_t nitems)
         break;
     }
 #endif
+
     return true;
 }
 
-bool cuda_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)
-{
-    d_buffer.reset(new char[final_nitems * sizeof_item]);
-    return true;
-}
-    
-buffer* cuda_buffer::make_cuda_buffer(int nitems,
+buffer_sptr cuda_buffer::make_cuda_buffer(int nitems,
                                       size_t sizeof_item,
                                       uint64_t downstream_lcm_nitems,
-                                      block_sptr link)
+                                      block_sptr link,
+                                      block_sptr buf_owner)
 {
-    return new cuda_buffer(nitems, sizeof_item, downstream_lcm_nitems, link, link);
+    return buffer_sptr(new cuda_buffer(nitems, sizeof_item, downstream_lcm_nitems,
+                                       link, buf_owner));
 }
 
 }

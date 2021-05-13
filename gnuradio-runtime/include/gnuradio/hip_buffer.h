@@ -15,12 +15,17 @@
 
 namespace gr {
 
+// see buffer_type.h for details on this macro
+// here we're using the macro to generate compile-time
+// class declarations
+MAKE_CUSTOM_BUFFER_TYPE(DEFAULT_HIP);
+
 class GR_RUNTIME_API hip_buffer : public buffer_single_mapped
 {
 public:
-    
+
     virtual ~hip_buffer();
-    
+
     /*!
      * \brief Handle post-general_work() cleanup and data transfer
      *
@@ -47,14 +52,15 @@ public:
      *
      * \return pointer to buffer base class
      */
-    buffer* make_hip_buffer(int nitems,
-                            size_t sizeof_item,
-                            uint64_t downstream_lcm_nitems,
-                            block_sptr link);
-    
+    static buffer_sptr make_hip_buffer(int nitems,
+                                   size_t sizeof_item,
+                                   uint64_t downstream_lcm_nitems,
+                                   block_sptr link,
+                                   block_sptr buf_owner);
+
 private:
     /*!
-     * \brief constructor is private.  Use gr_make_buffer to create instances.
+     * \brief constructor is private.  Use gr::make_buffer to create instances.
      *
      * Allocate a buffer that holds at least \p nitems of size \p sizeof_item.
      *
@@ -75,8 +81,6 @@ private:
                uint64_t downstream_lcm_nitems,
                block_sptr link,
                block_sptr buf_owner);
-    
-
 };
 
 } /* namespace gr */

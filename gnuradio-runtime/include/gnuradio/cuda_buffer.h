@@ -15,12 +15,17 @@
 
 namespace gr {
 
+// see buffer_type.h for details on this macro
+// here we're using the macro to generate compile-time
+// class declarations
+MAKE_CUSTOM_BUFFER_TYPE(DEFAULT_CUDA);
+
 class GR_RUNTIME_API cuda_buffer : public buffer_single_mapped
 {
   public:
-    
+
     virtual ~cuda_buffer();
-    
+
     /*!
      * \brief Handle post-general_work() cleanup and data transfer
      *
@@ -47,10 +52,11 @@ class GR_RUNTIME_API cuda_buffer : public buffer_single_mapped
      *
      * \return pointer to buffer base class
      */
-     buffer* make_cuda_buffer(int nitems,
-                              size_t sizeof_item,
-                              uint64_t downstream_lcm_nitems,
-                              block_sptr link);
+    static buffer_sptr make_cuda_buffer(int nitems,
+                                 size_t sizeof_item,
+                                 uint64_t downstream_lcm_nitems,
+                                 block_sptr link,
+                                 block_sptr buf_owner);
 private:
     /*!
      * \brief constructor is private.  Use gr_make_buffer to create instances.
