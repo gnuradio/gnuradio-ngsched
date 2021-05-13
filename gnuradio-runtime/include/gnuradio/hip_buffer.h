@@ -11,14 +11,10 @@
 #ifndef INCLUDED_GR_RUNTIME_HIP_BUFFER_H
 #define INCLUDED_GR_RUNTIME_HIP_BUFFER_H
 
+#include <gnuradio/buffer_type.h>
 #include <gnuradio/buffer_single_mapped.h>
 
 namespace gr {
-
-// see buffer_type.h for details on this macro
-// here we're using the macro to generate compile-time
-// class declarations
-MAKE_CUSTOM_BUFFER_TYPE(DEFAULT_HIP);
 
 class GR_RUNTIME_API hip_buffer : public buffer_single_mapped
 {
@@ -36,7 +32,7 @@ public:
      * \param nitems is the minimum number of items the buffer will hold.
      */
     bool post_work(size_t nitems);
-    
+
     /*!
      * \brief Do actual buffer allocation. Inherited from buffer_single_mapped.
      */
@@ -49,6 +45,7 @@ public:
      * \param sizeof_item
      * \param downstream_lcm_nitems
      * \param link
+     * \param buf_owner
      *
      * \return pointer to buffer base class
      */
@@ -84,5 +81,10 @@ private:
 };
 
 } /* namespace gr */
+
+// see buffer_type.h for details on this macro
+// here we're using the macro to generate compile-time
+// class declarations
+MAKE_CUSTOM_BUFFER_TYPE(DEFAULT_HIP, &hip_buffer::make_hip_buffer)
 
 #endif /* INCLUDED_GR_RUNTIME_HIP_BUFFER_H */
