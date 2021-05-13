@@ -26,7 +26,7 @@
 #endif
 
 namespace gr {
-
+    
 /*!
  * \brief The abstract base class for all 'terminal' processing blocks.
  * \ingroup base_blk

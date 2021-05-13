@@ -14,5 +14,10 @@ namespace gr {
 uint32_t buffer_type_base::s_nextId = 0;
 std::mutex buffer_type_base::s_mutex;
 
+// Trivial placeholder for buffer subclass creation factory function
+void foobar(int arg)
+{
+    arg += 1;
+}
 
 } /* namespace gr */
