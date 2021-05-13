@@ -9,8 +9,29 @@
  */
 
 #include <gnuradio/buffer_type_lookup_table.h>
+#include <gnuradio/buffer_type.h>
+#include <gnuradio/cuda_buffer.h>
+#include <gnuradio/hip_buffer.h>
+#include <gnuradio/host_buffer.h>
+
 
 namespace gr {
+
+// initialize the static map
+// NB:  When adding new custom buffer types you must update
+//      the following map-literal expression to include a
+//      mapping for your new type
+// buffer_type_lookup_table::buffer_type_to_fn_ptr_map
+// buffer_type_lookup_table::d_map = {
+//     {buftype_DEFAULT_CUDA::get(), &cuda_buffer::make_cuda_buffer},
+//     {buftype_DEFAULT_HIP::get(),  &hip_buffer::make_hip_buffer},
+//     {buftype_DEFAULT_HOST::get(), &host_buffer::make_host_buffer},
+// };
+
+ buffer_type_lookup_table::buffer_type_lookup_table()
+{
+    d_map[std::ref(buftype_DEFAULT_CUDA::get())] = &cuda_buffer::make_cuda_buffer;
+}
 
 #if 0
 // NB: This buffer_type_t doesn't match the pre-existing buffer_type_t
@@ -23,26 +44,27 @@ std::ostream& operator<<(std::ostream& os, buffer_type buffer_type)
 {
     switch(buffer_type)
     {
-    case buffer_type::BUFFER_TYPE_HOST:
-        return os << "BUFFER_TYPE_HOST";
-    case buffer_type::BUFFER_TYPE_CUDA:
-        return os << "BUFFER_TYPE_CUDA";
-    case buffer_type::BUFFER_TYPE_HIP:
-        return os << "BUFFER_TYPE_HIP";
+    case buftype_DEFAULT_CUDA:
+        return os << "buftype_DEFAULT_CUDA";
+    case buftype_DEFAULT_HIP:
+        return os << "buftype_DEFAULT_HIP";
+    case buftype_DEFAULT_HOST:
+        return os << "buftype_DEFAULT_HOST";
     default:
-        return os << "BUFFER TYPE UNKNOWN: " << int(buftype)
+        return os << "BUFFER TYPE UNKNOWN: " << buffer_type;
     }
 }
 #endif
 
-buffer_type_lookup_table* buffer_type_lookup_table::get_instance()
+#if 0
+buffer_type_lookup_table& buffer_type_lookup_table::get_instance()
 {
     static buffer_type_lookup_table instance;
-    return &instance;
+    return instance;
 }
 
-#if 0
-bool buffer_type_lookup_table::insert(buffer_type buffer_type,
+//bool buffer_type_lookup_table::insert(buffer_type_t buffer_type,
+bool buffer_type_lookup_table::insert(buffer_type_t& buffer_type,
                                       func_ptr_t(*fn)(int))
 {
     unique_lock<std::mutex> lck(d_mutex);
@@ -55,29 +77,25 @@ bool buffer_type_lookup_table::insert(buffer_type buffer_type,
     }
     else {
         cout << "**** duplicate keys are not allowed" << endl;
-        cout << "**** dupe: " << e << endl;
+        cout << "**** dupe: " << buffer_type << endl;
         return false;
     }
 }
 
-func_ptr_t buffer_type_lookup_table::lookup(buffer_type buffer_type)
+func_ptr_t buffer_type_lookup_table::lookup(buffer_type_base* buffer_type)
 {
     unique_lock<std::mutex> lck(d_mutex);
-
-    cout << "**** lokking up: " << buffer_type << endl;
 
     if (d_map.find(buffer_type) != d_map.end()) {
         // we found it
         return d_map[buffer_type];
     }
     else {
-        cout << "**** lookup failed" << endl;
         return nullptr;
     }
 }
 
-
-bool buffer_type_lookup_table::erase(buffer_type buffer_type)
+bool buffer_type_lookup_table::erase(buffer_type_base* buffer_type)
 {
     unique_lock<std::mutex> lck(d_mutex);
 
