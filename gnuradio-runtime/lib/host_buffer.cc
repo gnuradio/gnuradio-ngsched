@@ -8,11 +8,6 @@
  *
  */
 
-// debugging
-#include <iostream>
-using std::endl;
-using std::cout;
-
 #include <gnuradio/host_buffer.h>
 
 
@@ -29,32 +24,30 @@ host_buffer::host_buffer(int nitems,
                            link,
                            buf_owner)
 {
-    cout << "**** host_buffer ctor" << endl;
 }
 
 host_buffer::~host_buffer()
 {
-    
 }
 
 bool host_buffer::post_work(size_t nsize)
 {
 #if 0
-    switch(this->get_buffer_context()) {
-    case BUFFER_CONTEXT_HOST_TO_DEVICE:
+    switch(get_buffer_context()) {
+    case buffer_context::HOST_TO_DEVICE:
     {
         for (size_t i=0; i<nsize; ++i)
             d_device_buffer[i] = d_host_buffer[i];
         break;
     }
-    case BUFFER_CONTEXT_DEVICE_TO_HOST:
+    case buffer_context::DEVICE_TO_HOST:
     {
         for (size_t i=0; i<nsize; ++i)
             d_host_buffer[i] = d_device_buffer[i];
         break;
     }
-    case BUFFER_CONTEXT_HOST_TO_HOST:
-    case BUFFER_CONTEXT_DEVICE_TO_DEVICE:
+    case buffer_context::HOST_TO_HOST:
+    case buffer_context::DEVICE_TO_DEVICE:
     default:
     {
         // print warning message/throw exception/return false?
@@ -77,12 +70,14 @@ bool host_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)
     return true;
 }
 
-buffer* host_buffer::make_host_buffer(int nitems,
+buffer_sptr host_buffer::make_host_buffer(int nitems,
                                       size_t sizeof_item,
                                       uint64_t downstream_lcm_nitems,
-                                      block_sptr link)
+                                      block_sptr link,
+                                      block_sptr buf_owner)
 {
-    return new host_buffer(nitems, sizeof_item, downstream_lcm_nitems, link, link);
+    return buffer_sptr(new host_buffer(nitems, sizeof_item, downstream_lcm_nitems,
+                                       link, buf_owner));
 }
 
 }

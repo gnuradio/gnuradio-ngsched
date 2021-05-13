@@ -15,14 +15,19 @@
 
 namespace gr {
 
+// see buffer_type.h for details on this macro
+// here we're using the macro to generate compile-time
+// class declarations
+MAKE_CUSTOM_BUFFER_TYPE(DEFAULT_HOST);
+
 class GR_RUNTIME_API host_buffer : public buffer_single_mapped
 {
 public:
-    
+
     virtual ~host_buffer();
-    
+
     /*!
-     * \brief Handle post-general_work() cleanup and data transfer
+     * \brief Handles post-general_work() cleanup and data transfer
      *
      * Called directly after call to general_work() completes and
      * is used for data transfer (and perhaps other administrative
@@ -47,14 +52,15 @@ public:
      *
      * \return pointer to buffer base class
      */
-    buffer* make_host_buffer(int nitems,
-                             size_t sizeof_item,
-                             uint64_t downstream_lcm_nitems,
-                             block_sptr link);
-    
+    static buffer_sptr make_host_buffer(int nitems,
+                                    size_t sizeof_item,
+                                    uint64_t downstream_lcm_nitems,
+                                    block_sptr link,
+                                    block_sptr buf_owner);
+
 private:
     /*!
-     * \brief constructor is private.  Use gr_make_buffer to create instances.
+     * \brief constructor is private.  Use gr::make_buffer to create instances.
      *
      * Allocate a buffer that holds at least \p nitems of size \p sizeof_item.
      *
