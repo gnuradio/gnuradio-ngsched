@@ -43,7 +43,11 @@ enum class buffer_mapping_type { double_mapped, single_mapped };
  *
  * \param nitems is the minimum number of items the buffer will hold.
  * \param sizeof_item is the size of an item in bytes.
+ * \param downstream_lcm_nitems is the least common multiple of the items to
+ *                              read by downstream block(s)
  * \param link is the block that writes to this buffer.
+ * \param buf_owner is the block that owns the buffer which may or may not
+ *                     be the same as the block that writes to this buffer
  */
 GR_RUNTIME_API buffer_sptr make_buffer(int nitems,
                                        size_t sizeof_item,
@@ -168,9 +172,9 @@ public:
     {
         return d_item_tags.upper_bound(x);
     }
-    
+
     /*!
-     * \brief Function to be executed after this object's owner completes the 
+     * \brief Function to be executed after this object's owner completes the
      * call to general_work()
      */
     virtual bool post_work(size_t nbytes) = 0;
@@ -226,33 +230,6 @@ public:
     void on_unlock();
 
     friend std::ostream& operator<<(std::ostream& os, const buffer& buf);
-
-    // -------------------------------------------------------------------------
-    
-    /*!
-     * \brief assign buffer context
-     */
-    void set_context(const buffer_context& context)
-    {
-        if ((d_context == buffer_context::DEFAULT_INVALID) ||
-            (d_context == context))    
-        {
-            // Set the context if the existing value is the default or if
-            // it is the same
-            d_context = context;
-        }
-        else
-        {
-            // Otherwise error out as the context value cannot be changed after
-            // it is set
-            std::ostringstream msg;
-            msg << "Block: " << link()->identifier() << " has context "
-                << d_context << " assigned. Cannot change to context " 
-                <<  context << ".";
-            GR_LOG_ERROR(d_logger, msg.str());
-            throw std::runtime_error(msg.str());
-        }
-    }
 
 private:
     friend class buffer_reader;
