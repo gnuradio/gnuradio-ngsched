@@ -55,7 +55,7 @@ public:
      * \return     bool: true if the operation was successful, false otherwise
      */
     //bool insert(buffer_type_t bt, func_ptr_t fn);
-    bool insert(buffer_type_base* bt, func_ptr_t fn);
+    bool insert(buffer_type bt, func_ptr_t fn);
 
     /*!
      * \brief Return the function pointer asscociated with the given buffer_type
@@ -87,7 +87,7 @@ private:
     void operator=(buffer_type_lookup_table const&) = delete; //!< assignment operator
 
     // the map being wrapped
-    typedef std::map<buffer_type_t, func_ptr_t> buffer_type_to_fn_ptr_map;
+    typedef std::map<buffer_type, func_ptr_t> buffer_type_to_fn_ptr_map;
     static buffer_type_to_fn_ptr_map d_map;
 
     // mutex protecting operations on the map

@@ -62,6 +62,7 @@ buffer_type_lookup_table& buffer_type_lookup_table::get_instance()
     static buffer_type_lookup_table instance;
     return instance;
 }
+#endif
 
 //bool buffer_type_lookup_table::insert(buffer_type_t buffer_type,
 bool buffer_type_lookup_table::insert(buffer_type_t& buffer_type,
