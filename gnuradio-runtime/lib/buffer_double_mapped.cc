@@ -61,14 +61,15 @@ buffer_double_mapped::buffer_double_mapped(int nitems,
     }
 #endif
 }
+
 // NB: We had to add the extra 'block_sptr unused' parameter so that the
 // call signature matches the other factory-like functions used to create
 // the buffer_single_mapped subclasses
-buffer_sptr buffer_double_mapped::make_buffer_double_mapped(int nitems,
-                                                            size_t sizeof_item,
-                                                            uint64_t downstream_lcm_nitems,
-                                                            block_sptr link,
-                                                            block_sptr unused = block_sptr())
+buffer_sptr make_buffer_double_mapped(int nitems,
+                                      size_t sizeof_item,
+                                      uint64_t downstream_lcm_nitems,
+                                      block_sptr link,
+                                      block_sptr unused)
 {
     return buffer_sptr(
         new buffer_double_mapped(nitems, sizeof_item, downstream_lcm_nitems, link));

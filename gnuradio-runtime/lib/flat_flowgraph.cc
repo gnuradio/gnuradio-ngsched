@@ -15,6 +15,7 @@
 #include "flat_flowgraph.h"
 #include <gnuradio/block_detail.h>
 #include <gnuradio/buffer.h>
+#include <gnuradio/buffer_double_mapped.h>
 #include <gnuradio/buffer_reader.h>
 #include <gnuradio/buffer_type.h>
 #include <gnuradio/integer_math.h>

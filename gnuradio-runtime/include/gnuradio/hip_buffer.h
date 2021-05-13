@@ -80,11 +80,11 @@ private:
                block_sptr buf_owner);
 };
 
-} /* namespace gr */
-
 // see buffer_type.h for details on this macro
 // here we're using the macro to generate compile-time
 // class declarations
 MAKE_CUSTOM_BUFFER_TYPE(DEFAULT_HIP, &hip_buffer::make_hip_buffer)
+
+} /* namespace gr */
 
 #endif /* INCLUDED_GR_RUNTIME_HIP_BUFFER_H */

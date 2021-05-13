@@ -12,6 +12,7 @@
 #include "config.h"
 #endif
 #include "vmcircbuf.h"
+#include <gnuradio/block.h>
 #include <gnuradio/buffer.h>
 #include <gnuradio/buffer_double_mapped.h>
 #include <gnuradio/buffer_reader.h>
@@ -106,6 +107,7 @@ buffer_sptr make_buffer(int nitems,
     if (1) {
 #else
     if (buf_owner->get_buffer_type() != buftype_DEFAULT_NON_CUSTOM::get()) {
+//    if (1) {
 #endif
         // Buffer type is NOT the default non custom variety so allocate a
         // buffer_single_mapped instance
@@ -269,6 +271,28 @@ std::ostream& operator<<(std::ostream& os, const buffer& buf)
            << std::endl;
     }
     return os;
+}
+
+void buffer::set_context(const buffer_context& context)
+{
+    if ((d_context == buffer_context::DEFAULT_INVALID) ||
+        (d_context == context))    
+    {
+        // Set the context if the existing value is the default or if it is the
+        // same as what's already been set
+        d_context = context;
+    }
+    else
+    {
+        // Otherwise error out as the context value cannot be changed after
+        // it is set
+        std::ostringstream msg;
+        msg << "Block: " << link()->identifier() << " has context "
+            << d_context << " assigned. Cannot change to context " 
+            <<  context << ".";
+        GR_LOG_ERROR(d_logger, msg.str());
+        throw std::runtime_error(msg.str());
+    }
 }
 
 } /* namespace gr */

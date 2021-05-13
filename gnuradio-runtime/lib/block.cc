@@ -21,6 +21,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <gnuradio/buffer_double_mapped.h>
+
 namespace gr {
 
 // Moved from flat_flowgraph.cc
@@ -425,6 +427,15 @@ buffer_sptr block::replace_buffer(uint32_t out_port, block_sptr block_owner)
 
     detail_->set_output(out_port, new_buffer);
     return new_buffer;
+}
+
+buffer_type block::get_buffer_type()
+{
+#if DEBUG_SINGLE_MAPPED
+    return buftype_CUSTOM_HOST::get();
+#else
+    return buftype_DEFAULT_NON_CUSTOM::get();
+#endif
 }
 
 bool block::update_rate() const { return d_update_rate; }

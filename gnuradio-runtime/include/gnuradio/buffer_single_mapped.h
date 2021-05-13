@@ -14,7 +14,6 @@
 #include <functional>
 
 #include <gnuradio/api.h>
-#include <gnuradio/block.h>
 #include <gnuradio/buffer.h>
 #include <gnuradio/buffer_reader.h>
 #include <gnuradio/logger.h>
@@ -23,9 +22,8 @@
 namespace gr {
 
 /*!
- * TODO: update this
- *
- * \brief Single writer, multiple reader fifo.
+ * \brief A single mapped buffer where wrapping conditions are handled explicitly 
+ * via input/output_blocked_callback functions called from block_executor.
  * \ingroup internal
  */
 class GR_RUNTIME_API buffer_single_mapped : public buffer
@@ -46,36 +44,7 @@ public:
      */
     virtual int space_available();
 
-    virtual void update_reader_block_history(unsigned history, int delay)
-    {
-        unsigned old_max = d_max_reader_history;
-        d_max_reader_history = std::max(d_max_reader_history, history);
-        if (d_max_reader_history != old_max) {
-            d_write_index = d_max_reader_history - 1;
-
-#ifdef BUFFER_DEBUG
-            std::ostringstream msg;
-            msg << "[" << this << "] "
-                << "buffer_single_mapped constructor -- set wr index to: "
-                << d_write_index;
-            GR_LOG_DEBUG(d_logger, msg.str());
-#endif
-
-            // Reset the reader's read index if the buffer's write index has changed.
-            // Note that "history - 1" is the nzero_preload value passed to
-            // buffer_add_reader.
-            for (auto reader : d_readers) {
-                reader->d_read_index = d_write_index - (reader->link()->history() - 1);
-            }
-        }
-
-        // Only attempt to set has history flag if it is not already set
-        if (!d_has_history) {
-            // Blocks that set delay may set history to delay + 1 but this is
-            // not "real" history
-            d_has_history = ((static_cast<int>(history) - 1) != delay);
-        }
-    }
+    virtual void update_reader_block_history(unsigned history, int delay);
 
     /*!
      * \brief Return true if thread is ready to call the callback, false otherwise

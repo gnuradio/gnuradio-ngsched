@@ -12,7 +12,6 @@
 #define INCLUDED_GR_RUNTIME_BUFFER_H
 
 #include <gnuradio/api.h>
-#include <gnuradio/block.h>
 #include <gnuradio/buffer_context.h>
 #include <gnuradio/custom_lock.h>
 #include <gnuradio/logger.h>
@@ -230,6 +229,13 @@ public:
     void on_unlock();
 
     friend std::ostream& operator<<(std::ostream& os, const buffer& buf);
+
+    // -------------------------------------------------------------------------
+
+    /*!
+     * \brief assign buffer context
+     */
+    void set_context(const buffer_context& context);
 
 private:
     friend class buffer_reader;
