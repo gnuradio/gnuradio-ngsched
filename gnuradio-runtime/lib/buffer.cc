@@ -114,13 +114,9 @@ buffer_sptr make_buffer(int nitems,
             << " -- sizeof_item: " << sizeof_item;
         GR_LOG_DEBUG(logger, msg.str());
 #endif
-
-//      return buffer_sptr(ffn(nitems, sizeof_item, downstream_lcm_nitems,
-//                             link, buf_owner));
-
-//      return buffer_sptr(new buffer_single_mapped(
-//                         nitems, sizeof_item, downstream_lcm_nitems,
-//                         link, buf_owner));
+        throw std::runtime_error("TO BE RESOLVED");
+        // return buffer_sptr(new buffer_single_mapped(
+        //     nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner));
 
     } else {
         // Default to allocating a buffer_double_mapped instance

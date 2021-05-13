@@ -195,17 +195,8 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
 
         // In order to determine the buffer context, we need to examine both
         // the upstream and the downstream buffer_types
-        //
-        //  upstream               downstream            buffer_context
-        // -------------------------------------------------------------------
-        //  buf_DEF_NON_CUSTOM     buf_DEF_NON_CUSTOM    h->h
-        // !buf_DEF_NON_CUSTOM     buf_DEF_NON_CUSTOM    d->h
-        //  buf_DEF_NON_CUSTOM    !buf_DEF_NON_CUSTOM    h->d
-        // !buf_DEF_NON_CUSTOM    !buf_DEF_NON_CUSTOM    d->d
-        // -------------------------------------------------------------------
-        buffer_sptr src_buffer;
-        buffer_type_t& src_buf_type = src_grblock->get_buffer_type();
-        buffer_type_t& dest_buf_type = grblock->get_buffer_type();
+        buffer_type src_buf_type = src_grblock->get_buffer_type();
+        buffer_type dest_buf_type = grblock->get_buffer_type();
 
         buffer_context context;
         if (src_buf_type  == buftype_DEFAULT_NON_CUSTOM::get() &&
