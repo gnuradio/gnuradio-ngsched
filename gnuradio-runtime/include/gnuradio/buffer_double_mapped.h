@@ -21,16 +21,6 @@ namespace gr {
 class vmcircbuf;
 
 /*!
- * \brief Note this function is only used and really intended to be used in
- *  qa_buffer.cc for the unit tests of buffer_double_mapped.
- *
- */
-GR_RUNTIME_API buffer_sptr make_buffer_double_mapped(int nitems,
-                                                     size_t sizeof_item,
-                                                     uint64_t downstream_lcm_nitems,
-                                                     block_sptr link = block_sptr());
-
-/*!
  * \brief Single writer, multiple reader fifo.
  * \ingroup internal
  */
@@ -46,16 +36,26 @@ public:
      * \brief return number of items worth of space available for writing
      */
     virtual int space_available();
-    
+
     /*!
      * Inherited from buffer class.
      * @param nbytes
-     * @return 
+     * @return
      */
     virtual bool post_work(size_t nbytes)
     {
         return true;
     }
+
+    /*!
+     * \brief Note this function is only used and really intended to be used in
+     *  qa_buffer.cc for the unit tests of buffer_double_mapped.
+     *
+     */
+    static GR_RUNTIME_API buffer_sptr make_buffer_double_mapped(int nitems,
+                                                                size_t sizeof_item,
+                                                                uint64_t downstream_lcm_nitems,
+                                                                block_sptr link = block_sptr());
 
 protected:
     /*!
@@ -85,7 +85,7 @@ protected:
         assert((unsigned)s < d_bufsize);
         return s;
     }
-    
+
 private:
     friend class buffer_reader;
 
@@ -109,6 +109,7 @@ private:
      * \param downstream_lcm_nitems is the least common multiple of the items to
      *                              read by downstream blocks
      * \param link is the block that writes to this buffer.
+     * \param unused
      *
      * The total size of the buffer will be rounded up to a system
      * dependent boundary.  This is typically the system page size, but
@@ -117,8 +118,12 @@ private:
     buffer_double_mapped(int nitems,
                          size_t sizeof_item,
                          uint64_t downstream_lcm_nitems,
-                         block_sptr link);
+                         block_sptr link,
+                         block_sptr unused = block_sptr());
 };
+
+MAKE_CUSTOM_BUFFER_TYPE(DEFAULT_NON_CUSTOM,
+                        &buffer_double_mapped::make_buffer_double_mapped)
 
 } /* namespace gr */
 
