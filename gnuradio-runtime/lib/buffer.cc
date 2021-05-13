@@ -17,6 +17,7 @@
 #include <gnuradio/buffer_reader.h>
 #include <gnuradio/buffer_single_mapped.h>
 #include <gnuradio/buffer_type.h>
+#include <gnuradio/buffer_type_lookup_table.h>
 #include <gnuradio/integer_math.h>
 #include <gnuradio/math.h>
 #include <algorithm>
@@ -97,13 +98,9 @@ buffer_sptr make_buffer(int nitems,
     std::ostringstream msg;
 #endif
 
-#if 0
     // get the buffer_type_lookup_table instance
-    buffer_type_lookup_table* lut = buffer_type_lookup_table::get_instance();
-    func_ptr_t ffn = lut->lookup(buf_owner->get_buffer_type())();
-
-    return buffer_sptr(ffn(nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner);
-#endif
+    // buffer_type_lookup_table& lut(buffer_type_lookup_table::get_instance());
+    // func_ptr_t ffn = lut.lookup(&buf_owner->get_buffer_type());
 
 #if DEBUG_SINGLE_MAPPED
     if (1) {
@@ -117,9 +114,13 @@ buffer_sptr make_buffer(int nitems,
             << " -- sizeof_item: " << sizeof_item;
         GR_LOG_DEBUG(logger, msg.str());
 #endif
-        throw std::runtime_error("TO BE RESOLVED");
-//        return buffer_sptr(new buffer_single_mapped(
-//            nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner));
+
+//      return buffer_sptr(ffn(nitems, sizeof_item, downstream_lcm_nitems,
+//                             link, buf_owner));
+
+//      return buffer_sptr(new buffer_single_mapped(
+//                         nitems, sizeof_item, downstream_lcm_nitems,
+//                         link, buf_owner));
 
     } else {
         // Default to allocating a buffer_double_mapped instance
