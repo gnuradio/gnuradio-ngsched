@@ -98,39 +98,12 @@ buffer_sptr make_buffer(int nitems,
     gr::configure_default_loggers(logger, debug_logger, "make_buffer");
     std::ostringstream msg;
 #endif
-
-    // get the buffer_type_lookup_table instance
-    // buffer_type_lookup_table& lut(buffer_type_lookup_table::get_instance());
-    // func_ptr_t ffn = lut.lookup(&buf_owner->get_buffer_type());
-
-#if DEBUG_SINGLE_MAPPED
-    if (1) {
-#else
-    if (buf_owner->get_buffer_type() != buftype_DEFAULT_NON_CUSTOM::get()) {
-//    if (1) {
-#endif
-        // Buffer type is NOT the default non custom variety so allocate a
-        // buffer_single_mapped instance
-#ifdef BUFFER_DEBUG
-        msg << "buffer_single_mapped nitems: " << nitems
-            << " -- sizeof_item: " << sizeof_item;
-        GR_LOG_DEBUG(logger, msg.str());
-#endif
-        throw std::runtime_error("TO BE RESOLVED");
-        // return buffer_sptr(new buffer_single_mapped(
-        //     nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner));
-
-    } else {
-        // Default to allocating a buffer_double_mapped instance
-#ifdef BUFFER_DEBUG
-        msg << "buffer_double_mapped nitems: " << nitems
-            << " -- sizeof_item: " << sizeof_item;
-        GR_LOG_DEBUG(logger, msg.str());
-#endif
-
-        return buffer_sptr(
-            new buffer_double_mapped(nitems, sizeof_item, downstream_lcm_nitems, link));
-    }
+    
+    // Ask the buffer's owner what its buffer_type is and then delegate creation
+    // do that buffer_type
+    buffer_type buftype = buf_owner->get_buffer_type();
+    return buftype.make_buffer(nitems, sizeof_item, downstream_lcm_nitems, 
+                               link, buf_owner);
 }
 
 buffer::~buffer()

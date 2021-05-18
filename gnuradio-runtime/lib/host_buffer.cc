@@ -9,6 +9,7 @@
  */
 
 #include <gnuradio/host_buffer.h>
+#include <gnuradio/block.h>
 
 
 namespace gr {
@@ -24,6 +25,19 @@ host_buffer::host_buffer(int nitems,
                            link,
                            buf_owner)
 {
+    gr::configure_default_loggers(d_logger, d_debug_logger, "host_buffer");
+    if (!allocate_buffer(nitems, sizeof_item, downstream_lcm_nitems))
+        throw std::bad_alloc();
+    
+#ifdef BUFFER_DEBUG
+    // BUFFER DEBUG
+    {
+        std::ostringstream msg;
+        msg << "[" << this << "] "
+            << "host_buffer constructor -- history: " << link->history();
+        GR_LOG_DEBUG(d_logger, msg.str());
+    }
+#endif
 }
 
 host_buffer::~host_buffer()
@@ -66,7 +80,8 @@ bool host_buffer::post_work(size_t nsize)
     
 bool host_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)
 {
-    d_buffer.reset(new char[final_nitems * sizeof_item]);
+    d_buffer.reset(new char[final_nitems * sizeof_item]());
+    d_base = d_buffer.get();
     return true;
 }
 

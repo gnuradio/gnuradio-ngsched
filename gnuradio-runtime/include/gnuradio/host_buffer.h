@@ -57,7 +57,8 @@ public:
 
 private:
     /*!
-     * \brief constructor is private.  Use gr::make_buffer to create instances.
+     * \brief constructor is private.  Use the static make_host_buffer function
+     * to create instances.
      *
      * Allocate a buffer that holds at least \p nitems of size \p sizeof_item.
      *

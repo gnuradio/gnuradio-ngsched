@@ -47,6 +47,19 @@ public:
     virtual void update_reader_block_history(unsigned history, int delay);
 
     /*!
+     * \brief Return true if thread is ready to call input_blocked_callback,
+     * false otherwise
+     */
+    virtual bool input_blkd_cb_ready(int items_required, unsigned read_index);
+    
+    /*!
+     * \brief Callback function that the scheduler will call when it determines
+     * that the input is blocked. Override this function if needed.
+     */
+    virtual bool input_blocked_callback(int items_required, int items_avail, 
+                                        unsigned read_index);
+    
+    /*!
      * \brief Return true if thread is ready to call the callback, false otherwise
      */
     virtual bool output_blkd_cb_ready(int output_multiple);

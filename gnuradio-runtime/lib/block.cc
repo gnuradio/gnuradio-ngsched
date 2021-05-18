@@ -23,6 +23,11 @@
 
 #include <gnuradio/buffer_double_mapped.h>
 
+// NOTE: this is only used for the DEBUG_SINGLE_MAPPED define
+#include <gnuradio/host_buffer.h> 
+
+#define DEBUG_SINGLE_MAPPED     1
+
 namespace gr {
 
 // Moved from flat_flowgraph.cc
@@ -432,7 +437,7 @@ buffer_sptr block::replace_buffer(uint32_t out_port, block_sptr block_owner)
 buffer_type block::get_buffer_type()
 {
 #if DEBUG_SINGLE_MAPPED
-    return buftype_CUSTOM_HOST::get();
+    return buftype_DEFAULT_HOST::get();
 #else
     return buftype_DEFAULT_NON_CUSTOM::get();
 #endif
