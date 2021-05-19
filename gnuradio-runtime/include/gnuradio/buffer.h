@@ -269,7 +269,6 @@ private:
                                                                int nzero_preload,
                                                                block_sptr link,
                                                                int delay);
-    buffer_context d_context;
 
 protected:
     char* d_base;           // base address of buffer inside d_vmcircbuf.
@@ -308,6 +307,8 @@ protected:
 
     uint64_t d_downstream_lcm_nitems;
     uint64_t d_write_multiple;
+    
+    buffer_context d_context;
 
     /*!
      * \brief  Increment read or write index for this buffer

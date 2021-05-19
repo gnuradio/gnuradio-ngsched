@@ -11,6 +11,7 @@
 #ifndef INCLUDED_GR_RUNTIME_HOST_BUFFER_H
 #define INCLUDED_GR_RUNTIME_HOST_BUFFER_H
 
+#include <cstddef>
 #include <gnuradio/buffer_type.h>
 #include <gnuradio/buffer_single_mapped.h>
 
@@ -20,6 +21,9 @@ class GR_RUNTIME_API host_buffer : public buffer_single_mapped
 {
 public:
 
+    static void* device_memcpy(void* dest, const void* src, std::size_t count);
+    static void* device_memmove(void* dest, const void* src, std::size_t count);
+    
     virtual ~host_buffer();
 
     /*!
@@ -37,6 +41,11 @@ public:
      * \brief Do actual buffer allocation. Inherited from buffer_single_mapped.
      */
     bool do_allocate_buffer(int final_nitems, size_t sizeof_item);
+    
+    /*!
+     * \brief Return a pointer to the write buffer depending on the context
+     */
+    virtual void* write_pointer();
 
     /*!
      * \brief Creates a new host_buffer object
@@ -50,12 +59,17 @@ public:
      * \return pointer to buffer base class
      */
     static buffer_sptr make_host_buffer(int nitems,
-                                        size_t sizeof_item,
+                                        std::size_t sizeof_item,
                                         uint64_t downstream_lcm_nitems,
                                         block_sptr link,
                                         block_sptr buf_owner);
 
 private:
+    
+    // This is the simulated device buffer
+    std::unique_ptr<char> d_device_buf;
+    char* d_device_base;
+    
     /*!
      * \brief constructor is private.  Use the static make_host_buffer function
      * to create instances.

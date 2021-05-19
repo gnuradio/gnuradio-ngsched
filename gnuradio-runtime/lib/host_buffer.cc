@@ -11,8 +11,25 @@
 #include <gnuradio/host_buffer.h>
 #include <gnuradio/block.h>
 
+#include <cstring>
+#include <sstream>
+#include <stdexcept>
+
 
 namespace gr {
+
+void* host_buffer::device_memcpy(void* dest, const void* src, std::size_t count)
+{
+    // There is no spoon...er... device so fake it out using regular memcpy
+    return std::memcpy(dest, src, count);
+}
+
+void* host_buffer::device_memmove(void* dest, const void* src, std::size_t count)
+{
+    // There is no spoon...er... device so fake it out using regular memmmove
+    return std::memmove(dest, src, count);
+}
+
 
 host_buffer::host_buffer(int nitems,
                          size_t sizeof_item,
@@ -23,7 +40,8 @@ host_buffer::host_buffer(int nitems,
                            sizeof_item,
                            downstream_lcm_nitems,
                            link,
-                           buf_owner)
+                           buf_owner),
+    d_device_base(nullptr)    
 {
     gr::configure_default_loggers(d_logger, d_debug_logger, "host_buffer");
     if (!allocate_buffer(nitems, sizeof_item, downstream_lcm_nitems))
@@ -44,45 +62,80 @@ host_buffer::~host_buffer()
 {
 }
 
-bool host_buffer::post_work(size_t nsize)
+bool host_buffer::post_work(size_t nitems)
 {
-#if 0
-    switch(get_buffer_context()) {
-    case buffer_context::HOST_TO_DEVICE:
+    // NOTE: when this function is called the write pointer has not yet been 
+    // advanced so it can be used directly as the source ptr
+    switch (d_context)
     {
-        for (size_t i=0; i<nsize; ++i)
-            d_device_buffer[i] = d_host_buffer[i];
-        break;
+        case buffer_context::HOST_TO_DEVICE:
+        {
+            // Copy data from host buffer to device buffer
+            void* dest_ptr = &d_device_base[d_write_index * d_sizeof_item];
+            device_memcpy(dest_ptr, write_pointer(), nitems * d_sizeof_item);
+        }
+            break;
+            
+        case buffer_context::DEVICE_TO_HOST:
+        {
+            // Copy data from device buffer to host buffer
+            void* dest_ptr = &d_base[d_write_index * d_sizeof_item];
+            device_memcpy(dest_ptr, write_pointer(), nitems * d_sizeof_item);
+        }
+            break;
+        
+        case buffer_context::DEVICE_TO_DEVICE:
+            // No op
+            break;
+            
+        default:
+            std::ostringstream msg;
+            msg << "Unexpected context for host_buffer: " << d_context;
+            GR_LOG_ERROR(d_logger, msg.str());
+            throw std::runtime_error(msg.str());
     }
-    case buffer_context::DEVICE_TO_HOST:
-    {
-        for (size_t i=0; i<nsize; ++i)
-            d_host_buffer[i] = d_device_buffer[i];
-        break;
-    }
-    case buffer_context::HOST_TO_HOST:
-    case buffer_context::DEVICE_TO_DEVICE:
-    default:
-    {
-        // print warning message/throw exception/return false?
-        std::ostringstream msg;
-        msg << "[" << this << "] "
-            << "hip_buffer::post_work() - invalid buffer context: "
-            << this->get_buffer_context();
-        GR_LOG_WARN(d_logger, msg.str());
-        return false;
-        break;
-    }
-#endif
+    
     return true;
-
 }
     
 bool host_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)
 {
+    // This is the host buffer
     d_buffer.reset(new char[final_nitems * sizeof_item]());
     d_base = d_buffer.get();
+    
+    // This is the simulated device buffer
+    d_device_buf.reset(new char[final_nitems * sizeof_item]());
+    d_device_base = d_device_buf.get();
+    
     return true;
+}
+
+void* host_buffer::write_pointer()
+{
+    void* ptr = nullptr;
+    
+    switch (d_context)
+    {
+        case buffer_context::HOST_TO_DEVICE:
+            // Write into host buffer
+            ptr = &d_base[d_write_index * d_sizeof_item];
+            break;
+            
+        case buffer_context::DEVICE_TO_HOST:
+        case buffer_context::DEVICE_TO_DEVICE:
+            // Write into "device" buffer
+            ptr = &d_device_base[d_write_index * d_sizeof_item];
+            break;
+            
+        default:
+            std::ostringstream msg;
+            msg << "Unexpected context for host_buffer: " << d_context;
+            GR_LOG_ERROR(d_logger, msg.str());
+            throw std::runtime_error(msg.str());
+    }
+    
+    return ptr;
 }
 
 buffer_sptr host_buffer::make_host_buffer(int nitems,

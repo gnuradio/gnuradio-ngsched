@@ -11,6 +11,7 @@
 #ifndef INCLUDED_GR_RUNTIME_BUFFER_SINGLE_MAPPED_H
 #define INCLUDED_GR_RUNTIME_BUFFER_SINGLE_MAPPED_H
 
+#include <cstddef>
 #include <functional>
 
 #include <gnuradio/api.h>
@@ -21,6 +22,10 @@
 
 namespace gr {
 
+// TODO: move these to buffer.h where they are more accessible 
+typedef void* (*memcpy_func_t)(void* dest, const void* src, std::size_t count);
+typedef void* (*memmove_func_t)(void* dest, const void* src, std::size_t count);
+    
 /*!
  * \brief A single mapped buffer where wrapping conditions are handled explicitly 
  * via input/output_blocked_callback functions called from block_executor.
@@ -142,6 +147,52 @@ protected:
                          uint64_t downstream_lcm_nitems,
                          block_sptr link,
                          block_sptr buf_owner);
+    
+    /*! 
+     * \brief Abstracted logic for the input blocked callback function.
+     * 
+     * This function contains the logic for the input blocked callback however
+     * the data adjustment portion of the callback has been abstracted to allow
+     * the caller to pass in the desired buffer and corresponding buffer
+     * manipulation functions (memcpy and memmove).
+     * 
+     * \param items_required is the number of items required by the reader 
+     * \param items_avail is the number of items available 
+     * \param read_index is the current read index of the buffer reader caller
+     * \param buffer_ptr is the pointer to the desired buffer
+     * \param memcpy_func is a pointer to a memcpy function appropriate for the 
+     *                    the passed in buffer
+     * \param memmove_func is a pointer to a memmove function appropraite for 
+     *                     the passed in buffer
+     */
+    virtual bool input_blocked_callback_logic(
+        int items_required, 
+        int items_avail,
+        unsigned read_index,
+        char* buffer_ptr,
+        memcpy_func_t memcpy_func,
+        memmove_func_t memmove_func);
+    
+    /*! 
+     * \brief Abstracted logic for the output blocked callback function.
+     * 
+     * This function contains the logic for the output blocked callback however
+     * the data adjustment portion of the callback has been abstracted to allow
+     * the caller to pass in the desired buffer and corresponding buffer
+     * manipulation functions (memcpy and memmove).
+     * 
+     * \param output_multiple 
+     * \param force run the callback disregarding the internal checks
+     * \param buffer_ptr is the pointer to the desired buffer
+     * \param memmove_func is a pointer to a memmove function appropraite for 
+     *                     the passed in buffer
+     */
+    virtual bool output_blocked_callback_logic(
+        int output_multiple, 
+        bool force,
+        char* buffer_ptr,
+        memmove_func_t memmove_func);
+    
 };
 
 } /* namespace gr */

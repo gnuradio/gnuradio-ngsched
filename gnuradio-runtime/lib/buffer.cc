@@ -62,8 +62,7 @@ buffer::buffer(buffer_mapping_type buf_type,
                size_t sizeof_item,
                uint64_t downstream_lcm_nitems,
                block_sptr link)
-    : d_context(buffer_context::DEFAULT_INVALID),
-      d_base(0),
+    : d_base(0),
       d_bufsize(0),
       d_buf_map_type(buf_type),
       d_max_reader_delay(0),
@@ -78,7 +77,8 @@ buffer::buffer(buffer_mapping_type buf_type,
       d_callback_flag(false),
       d_active_pointer_counter(0),
       d_downstream_lcm_nitems(downstream_lcm_nitems),
-      d_write_multiple(0)
+      d_write_multiple(0),
+      d_context(buffer_context::DEFAULT_INVALID)
 {
     gr::configure_default_loggers(d_logger, d_debug_logger, "buffer");
 
