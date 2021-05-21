@@ -114,6 +114,11 @@ buffer::~buffer()
 
 void* buffer::write_pointer() { return &d_base[d_write_index * d_sizeof_item]; }
 
+const void* buffer::_read_pointer(unsigned int read_index)
+{
+    return &d_base[read_index * d_sizeof_item];
+}
+
 void buffer::update_write_pointer(int nitems)
 {
     gr::thread::scoped_lock guard(*mutex());

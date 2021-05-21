@@ -108,7 +108,6 @@ bool buffer_single_mapped::allocate_buffer(int nitems,
 #endif
     }
 
-//    d_base = d_buffer.get();
     d_bufsize = nitems;
 
     d_downstream_lcm_nitems = downstream_lcm_nitems;
@@ -127,17 +126,6 @@ bool buffer_single_mapped::input_blkd_cb_ready(
             (d_write_index < read_index));
 }
 
-bool buffer_single_mapped::input_blocked_callback(int items_required, int items_avail,
-                                                  unsigned read_index)
-{
-    return input_blocked_callback_logic(items_required, 
-                                        items_avail,
-                                        read_index,
-                                        d_base,
-                                        std::memcpy,
-                                        std::memmove);
-}
-
 bool buffer_single_mapped::output_blkd_cb_ready(int output_multiple)
 {
     uint32_t space_avail = 0;
@@ -147,14 +135,6 @@ bool buffer_single_mapped::output_blkd_cb_ready(int output_multiple)
     }
     return ((space_avail > 0) &&
             ((space_avail / output_multiple) * output_multiple == 0));
-}
-
-bool buffer_single_mapped::output_blocked_callback(int output_multiple, bool force)
-{
-    return output_blocked_callback_logic(output_multiple, 
-                                         force, 
-                                         d_base, 
-                                         std::memmove);
 }
 
 int buffer_single_mapped::space_available()

@@ -16,17 +16,11 @@
 #include <gnuradio/block_detail.h>
 #include <gnuradio/block_registry.h>
 #include <gnuradio/buffer.h>
+#include <gnuradio/buffer_double_mapped.h>
 #include <gnuradio/buffer_reader.h>
 #include <gnuradio/prefs.h>
 #include <iostream>
 #include <stdexcept>
-
-#include <gnuradio/buffer_double_mapped.h>
-
-// NOTE: this is only used for the DEBUG_SINGLE_MAPPED define
-#include <gnuradio/host_buffer.h> 
-
-#define DEBUG_SINGLE_MAPPED     1
 
 namespace gr {
 
@@ -436,11 +430,9 @@ buffer_sptr block::replace_buffer(uint32_t out_port, block_sptr block_owner)
 
 buffer_type block::get_buffer_type()
 {
-#if DEBUG_SINGLE_MAPPED
-    return buftype_DEFAULT_HOST::get();
-#else
+    // This is the default buffer_type for all software blocks. It results in a
+    // buffer_double_mapped instance being created for the block's output.
     return buftype_DEFAULT_NON_CUSTOM::get();
-#endif
 }
 
 bool block::update_rate() const { return d_update_rate; }

@@ -33,9 +33,9 @@ public:
      * is used for data transfer (and perhaps other administrative
      * activities)
      *
-     * \param nitems is the minimum number of items the buffer will hold.
+     * \param nitems number of items returned by general_work()
      */
-    bool post_work(size_t nitems);
+    bool post_work(int nitems);
 
     /*!
      * \brief Do actual buffer allocation. Inherited from buffer_single_mapped.
@@ -46,6 +46,26 @@ public:
      * \brief Return a pointer to the write buffer depending on the context
      */
     virtual void* write_pointer();
+    
+    /*!
+     * \brief return pointer to read buffer depending on the context
+     * 
+     * The return value points to at least items_available() items.
+     */
+    virtual const void* _read_pointer(unsigned int read_index);
+    
+    /*!
+     * \brief Callback function that the scheduler will call when it determines
+     * that the input is blocked. Override this function if needed.
+     */
+    virtual bool input_blocked_callback(int items_required, int items_avail, 
+                                        unsigned read_index);
+    
+    /*!
+     * \brief Callback function that the scheduler will call when it determines
+     * that the output is blocked
+     */
+    virtual bool output_blocked_callback(int output_multiple, bool force);
 
     /*!
      * \brief Creates a new host_buffer object

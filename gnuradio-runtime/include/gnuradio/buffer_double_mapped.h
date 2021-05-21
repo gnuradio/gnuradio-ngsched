@@ -53,10 +53,10 @@ public:
 
     /*!
      * Inherited from buffer class.
-     * @param nbytes
+     * @param nitems
      * @return
      */
-    virtual bool post_work(size_t nbytes)
+    virtual bool post_work(int nitems)
     {
         return true;
     }

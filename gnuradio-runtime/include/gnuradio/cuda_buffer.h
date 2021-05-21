@@ -31,13 +31,32 @@ class GR_RUNTIME_API cuda_buffer : public buffer_single_mapped
      *
      * \param nitems is the minimum number of items the buffer will hold.
      */
-    virtual bool post_work(size_t nitems);
+    virtual bool post_work(int nitems);
 
     /*!
      * \brief Do actual buffer allocation. Inherited from buffer_single_mapped.
      */
     bool do_allocate_buffer(int final_nitems, size_t sizeof_item);
 
+    /*!
+     * \brief Callback function that the scheduler will call when it determines
+     * that the input is blocked. Override this function if needed.
+     */
+    bool input_blocked_callback(int items_required, int items_avail, 
+                                unsigned read_index)
+    {
+        return false;
+    }
+    
+    /*!
+     * \brief Callback function that the scheduler will call when it determines
+     * that the output is blocked
+     */
+    bool output_blocked_callback(int output_multiple, bool force)
+    {
+        return false;
+    }
+    
     /*!
      * \brief Creates a new cuda_buffer object
      *

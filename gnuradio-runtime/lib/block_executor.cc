@@ -643,12 +643,6 @@ block_executor::state block_executor::run_one_iteration()
             goto were_done;
         }
 
-        // -------------------------------------------------------------------
-        // still trying to determine whether the calls to post_work() for each
-        // output should occur before or after the call to post_work_cleanup()
-        // -------------------------------------------------------------------
-
-
         if (n != block::WORK_CALLED_PRODUCE) {
             d->produce_each(n); // advance write pointers
         }

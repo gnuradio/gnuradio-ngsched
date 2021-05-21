@@ -36,7 +36,7 @@ hip_buffer::~hip_buffer()
 {
 }
 
-bool hip_buffer::post_work(size_t nsize)
+bool hip_buffer::post_work(int nitems)
 {
 #if 0
     switch(get_buffer_context()) {

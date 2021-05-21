@@ -62,7 +62,7 @@ public:
      * that the input is blocked. Override this function if needed.
      */
     virtual bool input_blocked_callback(int items_required, int items_avail, 
-                                        unsigned read_index);
+                                        unsigned read_index) = 0;
     
     /*!
      * \brief Return true if thread is ready to call the callback, false otherwise
@@ -73,7 +73,7 @@ public:
      * \brief Callback function that the scheduler will call when it determines
      * that the output is blocked
      */
-    virtual bool output_blocked_callback(int output_multiple, bool force);
+    virtual bool output_blocked_callback(int output_multiple, bool force) = 0;
 
 protected:
     /*!

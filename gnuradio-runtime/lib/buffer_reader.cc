@@ -109,7 +109,8 @@ int buffer_reader::items_available() // const
 
 const void* buffer_reader::read_pointer()
 {
-    return &d_buffer->d_base[d_read_index * d_buffer->d_sizeof_item];
+    // Delegate to buffer subclass
+    return d_buffer->_read_pointer(d_read_index);
 }
 
 void buffer_reader::update_read_pointer(int nitems)

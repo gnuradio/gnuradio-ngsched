@@ -121,10 +121,14 @@ void flat_flowgraph::allocate_block_detail(basic_block_sptr block)
             int multiple = dgrblock->output_multiple();
             int history = dgrblock->history();
             nitems =
-                std::max(nitems, static_cast<int>(2 * (decimation * multiple + history)));
+                std::max(nitems, static_cast<int>(2 * (decimation * multiple + (history - 1))));
 
             // Calculate the LCM of downstream reader nitems
 #ifdef BUFFER_DEBUG
+            msg.str("");
+            msg << "        BUFFER_TYPE: " << dgrblock->get_buffer_type().name();
+            GR_LOG_DEBUG(d_logger, msg.str());
+            
             msg.str("");
             msg << "        OUT MULTIPLE: " << multiple;
             GR_LOG_DEBUG(d_logger, msg.str());

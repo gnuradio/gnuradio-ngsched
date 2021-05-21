@@ -25,6 +25,8 @@
 #include <memory>
 
 
+#define BUFFER_DEBUG    1
+
 namespace gr {
 
 class vmcircbuf;
@@ -93,6 +95,13 @@ public:
      * space_available() items.
      */
     virtual void* write_pointer();
+    
+    /*!
+     * \brief return pointer to read buffer.
+     * 
+     * The return value points to at least items_available() items.
+     */
+    virtual const void* _read_pointer(unsigned int read_index);
 
     /*!
      * \brief tell buffer that we wrote \p nitems into it
@@ -176,7 +185,7 @@ public:
      * \brief Function to be executed after this object's owner completes the
      * call to general_work()
      */
-    virtual bool post_work(size_t nbytes) = 0;
+    virtual bool post_work(int nitems) = 0;
 
     /*!
      * \brief Returns true when the current thread is ready to call the callback,

@@ -29,7 +29,7 @@ cuda_buffer::~cuda_buffer()
 {
 }
 
-bool cuda_buffer::post_work(size_t nitems)
+bool cuda_buffer::post_work(int nitems)
 {
 #if 0
     switch(get_buffer_context()) {
