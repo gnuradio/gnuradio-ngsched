@@ -14,11 +14,17 @@
 #include <gnuradio/buffer_type.h>
 #include <gnuradio/buffer_single_mapped.h>
 
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+
 namespace gr {
 
 class GR_RUNTIME_API cuda_buffer : public buffer_single_mapped
 {
   public:
+      
+    static void* cuda_memcpy(void* dest, const void* src, std::size_t count);
+    static void* cuda_memmove(void* dest, const void* src, std::size_t count);
 
     virtual ~cuda_buffer();
 
@@ -39,23 +45,29 @@ class GR_RUNTIME_API cuda_buffer : public buffer_single_mapped
     bool do_allocate_buffer(int final_nitems, size_t sizeof_item);
 
     /*!
+     * \brief Return a pointer to the write buffer depending on the context
+     */
+    virtual void* write_pointer();
+    
+    /*!
+     * \brief return pointer to read buffer depending on the context
+     * 
+     * The return value points to at least items_available() items.
+     */
+    virtual const void* _read_pointer(unsigned int read_index);
+    
+    /*!
      * \brief Callback function that the scheduler will call when it determines
      * that the input is blocked. Override this function if needed.
      */
     bool input_blocked_callback(int items_required, int items_avail, 
-                                unsigned read_index)
-    {
-        return false;
-    }
+                                unsigned read_index);
     
     /*!
      * \brief Callback function that the scheduler will call when it determines
      * that the output is blocked
      */
-    bool output_blocked_callback(int output_multiple, bool force)
-    {
-        return false;
-    }
+    bool output_blocked_callback(int output_multiple, bool force);
     
     /*!
      * \brief Creates a new cuda_buffer object
@@ -74,6 +86,9 @@ class GR_RUNTIME_API cuda_buffer : public buffer_single_mapped
                                  block_sptr link,
                                  block_sptr buf_owner);
 private:
+    
+    char* d_cuda_buf;   // CUDA buffer
+    
     /*!
      * \brief constructor is private.  Use gr_make_buffer to create instances.
      *

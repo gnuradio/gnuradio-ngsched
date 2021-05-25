@@ -36,6 +36,15 @@ add_subdirectory(pmt)
 # Setup library
 ########################################################################
 
+include(GrCUDA)
+set(CUDA_SOURCES )
+
+if (CUDA_FOUND)
+  message(STATUS "CUDA WAS FOUNDA")
+  set(CUDA_SOURCES
+    cuda_buffer.cc)
+endif()
+
 #Generate sine table header file for Math part of library
 set(MATH_SINE_TABLE_HEADER ${CMAKE_CURRENT_BINARY_DIR}/math/generated/sine_table.h)
 set(MATH_SINE_TABLE_GENERATOR ${CMAKE_CURRENT_SOURCE_DIR}/math/gen_sine_table.py)
@@ -48,6 +57,7 @@ add_custom_command(
 
 add_library(gnuradio-runtime
   ${CMAKE_CURRENT_BINARY_DIR}/constants.cc
+  ${CUDA_SOURCES}
   basic_block.cc
   block.cc
   block_detail.cc
@@ -61,8 +71,6 @@ add_library(gnuradio-runtime
   buffer_reader_sm.cc
   buffer_single_mapped.cc
   buffer_type.cc
-  buffer_type_lookup_table.cc
-  cuda_buffer.cc
   flat_flowgraph.cc
   flowgraph.cc
   hier_block2.cc
@@ -138,6 +146,8 @@ target_link_libraries(gnuradio-runtime PUBLIC
   Boost::thread
   Log4Cpp::log4cpp
   MPLib::mplib
+  ${libunwind_LIBRARIES}
+  ${CUDA_CUDART_LIBRARY}    # CUDA runtime library
   # INTERFACE/PRIVATE split so users of the library can choose how to link to Python
   # (importantly, extension modules can avoid linking against Python and resolve
   #  their own Python symbols at runtime through the Python interpreter's linking)
@@ -154,6 +164,9 @@ target_link_libraries(gnuradio-runtime PUBLIC $<$<AND:$<CXX_COMPILER_ID:GNU>,$<V
 
 target_include_directories(gnuradio-runtime
   PUBLIC
+    ${PYTHON_NUMPY_INCLUDE_DIR}
+    ${pybind11_INCLUDE_DIR}
+    ${CUDA_INCLUDE_DIRS} 
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../include>
