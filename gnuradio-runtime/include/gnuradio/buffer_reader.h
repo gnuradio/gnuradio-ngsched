@@ -145,14 +145,14 @@ public:
     /*!
      * \brief Returns true when the current thread is ready to call the callback,
      * false otherwise. Delegate calls to buffer class's input_blkd_cb_ready().
-     * Note if input_blocked_callback is overridden then this function should 
+     * Note if input_blocked_callback is overridden then this function should
      * also be overridden.
      */
     virtual bool input_blkd_cb_ready(int items_required) const { return false; }
 
     /*!
      * \brief Callback function that the scheduler will call when it determines
-     * that the input is blocked. Delegate calls to buffer class's 
+     * that the input is blocked. Delegate calls to buffer class's
      * input_blocked_callback(). Override this function if needed.
      */
     virtual bool input_blocked_callback(int items_required, int items_avail)

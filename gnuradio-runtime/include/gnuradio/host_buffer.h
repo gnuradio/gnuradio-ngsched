@@ -11,19 +11,18 @@
 #ifndef INCLUDED_GR_RUNTIME_HOST_BUFFER_H
 #define INCLUDED_GR_RUNTIME_HOST_BUFFER_H
 
-#include <cstddef>
-#include <gnuradio/buffer_type.h>
 #include <gnuradio/buffer_single_mapped.h>
+#include <gnuradio/buffer_type.h>
+#include <cstddef>
 
 namespace gr {
 
 class GR_RUNTIME_API host_buffer : public buffer_single_mapped
 {
 public:
-
     static void* device_memcpy(void* dest, const void* src, std::size_t count);
     static void* device_memmove(void* dest, const void* src, std::size_t count);
-    
+
     virtual ~host_buffer();
 
     /*!
@@ -41,26 +40,26 @@ public:
      * \brief Do actual buffer allocation. Inherited from buffer_single_mapped.
      */
     bool do_allocate_buffer(int final_nitems, size_t sizeof_item);
-    
+
     /*!
      * \brief Return a pointer to the write buffer depending on the context
      */
     virtual void* write_pointer();
-    
+
     /*!
      * \brief return pointer to read buffer depending on the context
-     * 
+     *
      * The return value points to at least items_available() items.
      */
     virtual const void* _read_pointer(unsigned int read_index);
-    
+
     /*!
      * \brief Callback function that the scheduler will call when it determines
      * that the input is blocked. Override this function if needed.
      */
-    virtual bool input_blocked_callback(int items_required, int items_avail, 
-                                        unsigned read_index);
-    
+    virtual bool
+    input_blocked_callback(int items_required, int items_avail, unsigned read_index);
+
     /*!
      * \brief Callback function that the scheduler will call when it determines
      * that the output is blocked
@@ -85,11 +84,10 @@ public:
                                         block_sptr buf_owner);
 
 private:
-    
     // This is the simulated device buffer
     std::unique_ptr<char> d_device_buf;
     char* d_device_base;
-    
+
     /*!
      * \brief constructor is private.  Use the static make_host_buffer function
      * to create instances.
@@ -113,7 +111,6 @@ private:
                 uint64_t downstream_lcm_nitems,
                 block_sptr link,
                 block_sptr buf_owner);
-
 };
 
 // see buffer_type.h for details on this macro

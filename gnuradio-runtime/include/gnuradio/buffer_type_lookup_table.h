@@ -11,13 +11,13 @@
 #ifndef GR_RUNTIME_BUFFER_TYPE_LOOKUP_TABLE_H
 #define GR_RUNTIME_BUFFER_TYPE_LOOKUP_TABLE_H
 
-#include <gnuradio/buffer_type.h>
 #include <gnuradio/buffer_context.h>
-#include <gnuradio/custom_lock.h>
-#include <gnuradio/thread/thread.h>
+#include <gnuradio/buffer_type.h>
 #include <gnuradio/cuda_buffer.h>
+#include <gnuradio/custom_lock.h>
 #include <gnuradio/hip_buffer.h>
 #include <gnuradio/host_buffer.h>
+#include <gnuradio/thread/thread.h>
 
 #include <map>
 
@@ -29,10 +29,10 @@
 namespace gr {
 
 typedef buffer_sptr (*func_ptr_t)(int nitems,
-                                 size_t sizeof_item,
-                                 uint64_t downstrea_lcm_nitems,
-                                 block_sptr link,
-                                 block_sptr buf_owner);
+                                  size_t sizeof_item,
+                                  uint64_t downstrea_lcm_nitems,
+                                  block_sptr link,
+                                  block_sptr buf_owner);
 
 class buffer_type_lookup_table
 {
@@ -54,7 +54,7 @@ public:
      * \param fn   function pointer used to create the associated buffer
      * \return     bool: true if the operation was successful, false otherwise
      */
-    //bool insert(buffer_type_t bt, func_ptr_t fn);
+    // bool insert(buffer_type_t bt, func_ptr_t fn);
     bool insert(buffer_type bt, func_ptr_t fn);
 
     /*!
@@ -78,7 +78,6 @@ public:
     bool erase(buffer_type_base* bt);
 
 private:
-
     // private constructor
     buffer_type_lookup_table();
 

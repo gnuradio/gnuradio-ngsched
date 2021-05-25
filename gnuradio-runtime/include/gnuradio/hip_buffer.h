@@ -11,15 +11,14 @@
 #ifndef INCLUDED_GR_RUNTIME_HIP_BUFFER_H
 #define INCLUDED_GR_RUNTIME_HIP_BUFFER_H
 
-#include <gnuradio/buffer_type.h>
 #include <gnuradio/buffer_single_mapped.h>
+#include <gnuradio/buffer_type.h>
 
 namespace gr {
 
 class GR_RUNTIME_API hip_buffer : public buffer_single_mapped
 {
 public:
-
     virtual ~hip_buffer();
 
     /*!
@@ -37,25 +36,21 @@ public:
      * \brief Do actual buffer allocation. Inherited from buffer_single_mapped.
      */
     bool do_allocate_buffer(int final_nitems, size_t sizeof_item);
-    
+
     /*!
      * \brief Callback function that the scheduler will call when it determines
      * that the input is blocked. Override this function if needed.
      */
-    bool input_blocked_callback(int items_required, int items_avail, 
-                                unsigned read_index)
+    bool input_blocked_callback(int items_required, int items_avail, unsigned read_index)
     {
         return false;
     }
-    
+
     /*!
      * \brief Callback function that the scheduler will call when it determines
      * that the output is blocked
      */
-    bool output_blocked_callback(int output_multiple, bool force)
-    {
-        return false;
-    }
+    bool output_blocked_callback(int output_multiple, bool force) { return false; }
 
     /*!
      * \brief Creates a new hip_buffer object
@@ -69,10 +64,10 @@ public:
      * \return pointer to buffer base class
      */
     static buffer_sptr make_hip_buffer(int nitems,
-                                   size_t sizeof_item,
-                                   uint64_t downstream_lcm_nitems,
-                                   block_sptr link,
-                                   block_sptr buf_owner);
+                                       size_t sizeof_item,
+                                       uint64_t downstream_lcm_nitems,
+                                       block_sptr link,
+                                       block_sptr buf_owner);
 
 private:
     /*!

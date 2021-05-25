@@ -10,8 +10,8 @@
 
 // debugging
 #include <iostream>
-using std::endl;
 using std::cout;
+using std::endl;
 
 #include <gnuradio/hip_buffer.h>
 
@@ -23,18 +23,12 @@ hip_buffer::hip_buffer(int nitems,
                        uint64_t downstream_lcm_nitems,
                        block_sptr link,
                        block_sptr buf_owner)
-    : buffer_single_mapped(nitems,
-                           sizeof_item,
-                           downstream_lcm_nitems,
-                           link,
-                           buf_owner)
+    : buffer_single_mapped(nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner)
 {
     cout << "**** hip_buffer ctor" << endl;
 }
 
-hip_buffer::~hip_buffer()
-{
-}
+hip_buffer::~hip_buffer() {}
 
 bool hip_buffer::post_work(int nitems)
 {
@@ -66,7 +60,7 @@ bool hip_buffer::post_work(int nitems)
 #endif
     return true;
 }
-    
+
 bool hip_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)
 {
     d_buffer.reset(new char[final_nitems * sizeof_item]);
@@ -74,13 +68,13 @@ bool hip_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)
 }
 
 buffer_sptr hip_buffer::make_hip_buffer(int nitems,
-                                    size_t sizeof_item,
-                                    uint64_t downstream_lcm_nitems,
-                                    block_sptr link,
-                                    block_sptr buf_owner)
+                                        size_t sizeof_item,
+                                        uint64_t downstream_lcm_nitems,
+                                        block_sptr link,
+                                        block_sptr buf_owner)
 {
-    return buffer_sptr(new hip_buffer(nitems, sizeof_item, downstream_lcm_nitems,
-                                      link, buf_owner));
+    return buffer_sptr(
+        new hip_buffer(nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner));
 }
 
-}
+} // namespace gr

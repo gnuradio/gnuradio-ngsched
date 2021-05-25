@@ -54,7 +54,7 @@ public:
     bool operator>=(const buffer_type_base& other) = delete;
 
     const std::string& name() const { return d_name; }
-    
+
     inline buffer_sptr make_buffer(int nitems,
                                    size_t sizeof_item,
                                    uint64_t downstream_lcm_nitems,
@@ -73,11 +73,9 @@ protected:
     std::string d_name;
     factory_func_ptr d_factory;
 
-    // Private constructor
-    buffer_type_base(const char* name,
-                     factory_func_ptr factory_func) 
-        : d_name(name),
-          d_factory(factory_func)
+    // Protected constructor
+    buffer_type_base(const char* name, factory_func_ptr factory_func)
+        : d_name(name), d_factory(factory_func)
     {
         std::lock_guard<std::mutex> lock(s_mutex);
         d_value = s_nextId++;
@@ -87,19 +85,18 @@ protected:
 typedef const buffer_type_base buffer_type_t;
 
 
-#define MAKE_CUSTOM_BUFFER_TYPE(CLASSNAME, FACTORY_FUNC_PTR)           \
-    class GR_RUNTIME_API buftype_##CLASSNAME : public buffer_type_base \
-    {                                                                  \
-    public:                                                            \
-        static buffer_type_t& get()                                    \
-        {                                                              \
-            static buftype_##CLASSNAME instance;                       \
-            return instance;                                           \
-        }                                                              \
-                                                                       \
-    private:                                                           \
-        buftype_##CLASSNAME()                                          \
-            : buffer_type_base(#CLASSNAME, FACTORY_FUNC_PTR) {}        \
+#define MAKE_CUSTOM_BUFFER_TYPE(CLASSNAME, FACTORY_FUNC_PTR)                      \
+    class GR_RUNTIME_API buftype_##CLASSNAME : public buffer_type_base            \
+    {                                                                             \
+    public:                                                                       \
+        static buffer_type get()                                                  \
+        {                                                                         \
+            static buftype_##CLASSNAME instance;                                  \
+            return instance;                                                      \
+        }                                                                         \
+                                                                                  \
+    private:                                                                      \
+        buftype_##CLASSNAME() : buffer_type_base(#CLASSNAME, FACTORY_FUNC_PTR) {} \
     };
 
 } // namespace gr

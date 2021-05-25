@@ -120,15 +120,15 @@ void flat_flowgraph::allocate_block_detail(basic_block_sptr block)
             double decimation = (1.0 / dgrblock->relative_rate());
             int multiple = dgrblock->output_multiple();
             int history = dgrblock->history();
-            nitems =
-                std::max(nitems, static_cast<int>(2 * (decimation * multiple + (history - 1))));
+            nitems = std::max(
+                nitems, static_cast<int>(2 * (decimation * multiple + (history - 1))));
 
             // Calculate the LCM of downstream reader nitems
 #ifdef BUFFER_DEBUG
             msg.str("");
             msg << "        BUFFER_TYPE: " << dgrblock->get_buffer_type().name();
             GR_LOG_DEBUG(d_logger, msg.str());
-            
+
             msg.str("");
             msg << "        OUT MULTIPLE: " << multiple;
             GR_LOG_DEBUG(d_logger, msg.str());
@@ -204,20 +204,17 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
         buffer_type dest_buf_type = grblock->get_buffer_type();
 
         buffer_context context;
-        if (src_buf_type  == buftype_DEFAULT_NON_CUSTOM::get() &&
+        if (src_buf_type == buftype_DEFAULT_NON_CUSTOM::get() &&
             dest_buf_type == buftype_DEFAULT_NON_CUSTOM::get()) {
             context = buffer_context::HOST_TO_HOST;
-        }
-        else if (src_buf_type  != buftype_DEFAULT_NON_CUSTOM::get() &&
-                 dest_buf_type == buftype_DEFAULT_NON_CUSTOM::get()) {
+        } else if (src_buf_type != buftype_DEFAULT_NON_CUSTOM::get() &&
+                   dest_buf_type == buftype_DEFAULT_NON_CUSTOM::get()) {
             context = buffer_context::DEVICE_TO_HOST;
-        }
-        else if (src_buf_type  == buftype_DEFAULT_NON_CUSTOM::get() &&
-                 dest_buf_type != buftype_DEFAULT_NON_CUSTOM::get()) {
+        } else if (src_buf_type == buftype_DEFAULT_NON_CUSTOM::get() &&
+                   dest_buf_type != buftype_DEFAULT_NON_CUSTOM::get()) {
             context = buffer_context::HOST_TO_DEVICE;
-        }
-        else if (src_buf_type  != buftype_DEFAULT_NON_CUSTOM::get() &&
-                 dest_buf_type != buftype_DEFAULT_NON_CUSTOM::get()) {
+        } else if (src_buf_type != buftype_DEFAULT_NON_CUSTOM::get() &&
+                   dest_buf_type != buftype_DEFAULT_NON_CUSTOM::get()) {
             context = buffer_context::DEVICE_TO_DEVICE;
         }
 
@@ -229,7 +226,7 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
             src_buffer = src_grblock->detail()->output(src_port);
         } else {
             if (dest_buf_type != buftype_DEFAULT_NON_CUSTOM::get() &&
-                src_buf_type  == buftype_DEFAULT_NON_CUSTOM::get()) {
+                src_buf_type == buftype_DEFAULT_NON_CUSTOM::get()) {
                 // The block uses a custom buffer but the upstream block does not
                 // therefore the upstream block's buffer can be replaced with the
                 // type of buffer that the block needs

@@ -112,13 +112,13 @@ bool buffer_single_mapped::allocate_buffer(int nitems,
 
     d_downstream_lcm_nitems = downstream_lcm_nitems;
     d_write_multiple = write_granularity;
-    
+
     // Do the actual allocation(s) with the finalized nitems
     return do_allocate_buffer(nitems, sizeof_item);
 }
 
-bool buffer_single_mapped::input_blkd_cb_ready(
-    int items_required, unsigned int read_index)
+bool buffer_single_mapped::input_blkd_cb_ready(int items_required,
+                                               unsigned int read_index)
 {
     gr::thread::scoped_lock(*this->mutex());
 
@@ -232,8 +232,7 @@ void buffer_single_mapped::update_reader_block_history(unsigned history, int del
 #ifdef BUFFER_DEBUG
         std::ostringstream msg;
         msg << "[" << this << "] "
-            << "buffer_single_mapped constructor -- set wr index to: "
-            << d_write_index;
+            << "buffer_single_mapped constructor -- set wr index to: " << d_write_index;
         GR_LOG_DEBUG(d_logger, msg.str());
 #endif
 
@@ -255,13 +254,12 @@ void buffer_single_mapped::update_reader_block_history(unsigned history, int del
 
 //------------------------------------------------------------------------------
 
-bool buffer_single_mapped::input_blocked_callback_logic(
-    int items_required, 
-    int items_avail,
-    unsigned read_index,
-    char* buffer_ptr,
-    memcpy_func_t memcpy_func,
-    memmove_func_t memmove_func)
+bool buffer_single_mapped::input_blocked_callback_logic(int items_required,
+                                                        int items_avail,
+                                                        unsigned read_index,
+                                                        char* buffer_ptr,
+                                                        memcpy_func_t memcpy_func,
+                                                        memmove_func_t memmove_func)
 {
     // Maybe adjust read pointers from min read index?
     // This would mean that *all* readers must be > (passed) the write index
@@ -293,8 +291,8 @@ bool buffer_single_mapped::input_blocked_callback_logic(
         std::ostringstream msg;
         msg << "[" << this << ";" << this << "] "
             << "input_blocked_callback() WR_idx: " << d_write_index
-            << " -- WR items: " << nitems_written()
-            << " -- BUFSIZE: " << d_bufsize << " -- RD_idx: " << min_read_idx;
+            << " -- WR items: " << nitems_written() << " -- BUFSIZE: " << d_bufsize
+            << " -- RD_idx: " << min_read_idx;
         for (size_t idx = 0; idx < d_readers.size(); ++idx) {
             if (idx != min_reader_index) {
                 msg << " -- OTHER_RDR: " << d_readers[idx]->d_read_index;
@@ -335,11 +333,10 @@ bool buffer_single_mapped::input_blocked_callback_logic(
     return false;
 }
 
-bool buffer_single_mapped::output_blocked_callback_logic(
-    int output_multiple, 
-    bool force,
-    char* buffer_ptr,
-    memmove_func_t memmove_func)
+bool buffer_single_mapped::output_blocked_callback_logic(int output_multiple,
+                                                         bool force,
+                                                         char* buffer_ptr,
+                                                         memmove_func_t memmove_func)
 {
     uint32_t space_avail = space_available();
 
@@ -387,8 +384,8 @@ bool buffer_single_mapped::output_blocked_callback_logic(
         uint32_t to_move_bytes = to_move_items * d_sizeof_item;
 
         // Shift "to be read" data back to the beginning of the buffer
-        memmove_func(buffer_ptr, buffer_ptr + (min_read_idx * d_sizeof_item), 
-                     to_move_bytes);
+        memmove_func(
+            buffer_ptr, buffer_ptr + (min_read_idx * d_sizeof_item), to_move_bytes);
 
         // Adjust write index and each reader index
         d_write_index -= min_read_idx;

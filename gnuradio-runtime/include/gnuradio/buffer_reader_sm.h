@@ -42,7 +42,7 @@ public:
 
     /*!
      * \brief Callback function that the scheduler will call when it determines
-     * that the input is blocked; delegate calls to buffer class's 
+     * that the input is blocked; delegate calls to buffer class's
      * input_blocked_callback()
      */
     virtual bool input_blocked_callback(int items_required, int items_avail);

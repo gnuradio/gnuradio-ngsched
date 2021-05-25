@@ -11,8 +11,8 @@
 #ifndef INCLUDED_GR_RUNTIME_CUDA_BUFFER_H
 #define INCLUDED_GR_RUNTIME_CUDA_BUFFER_H
 
-#include <gnuradio/buffer_type.h>
 #include <gnuradio/buffer_single_mapped.h>
+#include <gnuradio/buffer_type.h>
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -21,8 +21,7 @@ namespace gr {
 
 class GR_RUNTIME_API cuda_buffer : public buffer_single_mapped
 {
-  public:
-      
+public:
     static void* cuda_memcpy(void* dest, const void* src, std::size_t count);
     static void* cuda_memmove(void* dest, const void* src, std::size_t count);
 
@@ -48,27 +47,26 @@ class GR_RUNTIME_API cuda_buffer : public buffer_single_mapped
      * \brief Return a pointer to the write buffer depending on the context
      */
     virtual void* write_pointer();
-    
+
     /*!
      * \brief return pointer to read buffer depending on the context
-     * 
+     *
      * The return value points to at least items_available() items.
      */
     virtual const void* _read_pointer(unsigned int read_index);
-    
+
     /*!
      * \brief Callback function that the scheduler will call when it determines
      * that the input is blocked. Override this function if needed.
      */
-    bool input_blocked_callback(int items_required, int items_avail, 
-                                unsigned read_index);
-    
+    bool input_blocked_callback(int items_required, int items_avail, unsigned read_index);
+
     /*!
      * \brief Callback function that the scheduler will call when it determines
      * that the output is blocked
      */
     bool output_blocked_callback(int output_multiple, bool force);
-    
+
     /*!
      * \brief Creates a new cuda_buffer object
      *
@@ -81,14 +79,14 @@ class GR_RUNTIME_API cuda_buffer : public buffer_single_mapped
      * \return pointer to buffer base class
      */
     static buffer_sptr make_cuda_buffer(int nitems,
-                                 size_t sizeof_item,
-                                 uint64_t downstream_lcm_nitems,
-                                 block_sptr link,
-                                 block_sptr buf_owner);
+                                        size_t sizeof_item,
+                                        uint64_t downstream_lcm_nitems,
+                                        block_sptr link,
+                                        block_sptr buf_owner);
+
 private:
-    
-    char* d_cuda_buf;   // CUDA buffer
-    
+    char* d_cuda_buf; // CUDA buffer
+
     /*!
      * \brief constructor is private.  Use gr_make_buffer to create instances.
      *
@@ -111,7 +109,6 @@ private:
                 uint64_t downstream_lcm_nitems,
                 block_sptr link,
                 block_sptr buf_owner);
-
 };
 
 // see buffer_type.h for details on this macro

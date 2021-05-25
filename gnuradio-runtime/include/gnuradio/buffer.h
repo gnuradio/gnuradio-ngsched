@@ -25,7 +25,7 @@
 #include <memory>
 
 
-#define BUFFER_DEBUG    1
+#define BUFFER_DEBUG 1
 
 namespace gr {
 
@@ -95,10 +95,10 @@ public:
      * space_available() items.
      */
     virtual void* write_pointer();
-    
+
     /*!
      * \brief return pointer to read buffer.
-     * 
+     *
      * The return value points to at least items_available() items.
      */
     virtual const void* _read_pointer(unsigned int read_index);
@@ -192,21 +192,21 @@ public:
      * false otherwise. Note if input_blocked_callback is overridden then this
      * function should also be overridden.
      */
-    virtual bool input_blkd_cb_ready(int items_required, unsigned read_index) 
-    { 
-        return false; 
+    virtual bool input_blkd_cb_ready(int items_required, unsigned read_index)
+    {
+        return false;
     }
-    
+
     /*!
      * \brief Callback function that the scheduler will call when it determines
      * that the input is blocked. Override this function if needed.
      */
-    virtual bool input_blocked_callback(int items_required, int items_avail, 
-                                        unsigned read_index)
+    virtual bool
+    input_blocked_callback(int items_required, int items_avail, unsigned read_index)
     {
         return false;
     }
-    
+
     /*!
      * \brief Returns true if the current thread is ready to execute
      * output_blocked_callback(), false otherwise. Note if the default
@@ -316,7 +316,7 @@ protected:
 
     uint64_t d_downstream_lcm_nitems;
     uint64_t d_write_multiple;
-    
+
     buffer_context d_context;
 
     /*!

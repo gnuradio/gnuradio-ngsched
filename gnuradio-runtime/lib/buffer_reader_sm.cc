@@ -62,9 +62,8 @@ bool buffer_reader_sm::input_blocked_callback(int items_required, int items_avai
 {
     // Update items available before going farther as it could be stale
     items_avail = items_available();
-    
-    return d_buffer->input_blocked_callback(items_required, items_avail, 
-                                            d_read_index);
+
+    return d_buffer->input_blocked_callback(items_required, items_avail, d_read_index);
 }
 
 buffer_reader_sm::buffer_reader_sm(buffer_sptr buffer,

@@ -56,10 +56,7 @@ public:
      * @param nitems
      * @return
      */
-    virtual bool post_work(int nitems)
-    {
-        return true;
-    }
+    virtual bool post_work(int nitems) { return true; }
 
 protected:
     /*!
@@ -98,9 +95,12 @@ private:
                                                   uint64_t downstream_lcm_nitems,
                                                   block_sptr link,
                                                   block_sptr buf_owner);
-    friend GR_RUNTIME_API buffer_sptr make_buffer_double_mapped(
-        int nitems, size_t sizeof_item, uint64_t downstream_lcm_nitems, block_sptr link, 
-        block_sptr buf_owner);
+    friend GR_RUNTIME_API buffer_sptr
+    make_buffer_double_mapped(int nitems,
+                              size_t sizeof_item,
+                              uint64_t downstream_lcm_nitems,
+                              block_sptr link,
+                              block_sptr buf_owner);
 
     std::unique_ptr<gr::vmcircbuf> d_vmcircbuf;
 

@@ -98,12 +98,12 @@ buffer_sptr make_buffer(int nitems,
     gr::configure_default_loggers(logger, debug_logger, "make_buffer");
     std::ostringstream msg;
 #endif
-    
+
     // Ask the buffer's owner what its buffer_type is and then delegate creation
     // do that buffer_type
     buffer_type buftype = buf_owner->get_buffer_type();
-    return buftype.make_buffer(nitems, sizeof_item, downstream_lcm_nitems, 
-                               link, buf_owner);
+    return buftype.make_buffer(
+        nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner);
 }
 
 buffer::~buffer()
@@ -253,21 +253,16 @@ std::ostream& operator<<(std::ostream& os, const buffer& buf)
 
 void buffer::set_context(const buffer_context& context)
 {
-    if ((d_context == buffer_context::DEFAULT_INVALID) ||
-        (d_context == context))    
-    {
+    if ((d_context == buffer_context::DEFAULT_INVALID) || (d_context == context)) {
         // Set the context if the existing value is the default or if it is the
         // same as what's already been set
         d_context = context;
-    }
-    else
-    {
+    } else {
         // Otherwise error out as the context value cannot be changed after
         // it is set
         std::ostringstream msg;
-        msg << "Block: " << link()->identifier() << " has context "
-            << d_context << " assigned. Cannot change to context " 
-            <<  context << ".";
+        msg << "Block: " << link()->identifier() << " has context " << d_context
+            << " assigned. Cannot change to context " << context << ".";
         GR_LOG_ERROR(d_logger, msg.str());
         throw std::runtime_error(msg.str());
     }
