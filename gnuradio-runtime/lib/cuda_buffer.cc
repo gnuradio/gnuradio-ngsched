@@ -33,10 +33,41 @@ void* cuda_buffer::cuda_memcpy(void* dest, const void* src, std::size_t count)
 
 void* cuda_buffer::cuda_memmove(void* dest, const void* src, std::size_t count)
 {
-    // TODO: memmove will have to be implemented manually using memcpy and,
-    //       unfortunately, a separate buffer
-    assert(0);
-    return nullptr;
+    // Would a kernel that checks for overlap and then copies front-to-back or
+    // back-to-front be faster than using cudaMemcpy with a temp buffer?
+    
+    // Allocate temp buffer
+    void* tempBuffer = nullptr;
+    cudaError_t rc = cudaSuccess;
+    rc = cudaMalloc((void**)&tempBuffer, count);
+    if (rc) {
+        std::ostringstream msg;
+        msg << "Error allocating device buffer: " << cudaGetErrorName(rc) << " -- "
+            << cudaGetErrorString(rc);
+        throw std::runtime_error(msg.str());
+    }
+    
+    // First copy data from source to temp buffer
+    rc = cudaMemcpy(tempBuffer, src, count, cudaMemcpyDeviceToDevice);
+    if (rc) {
+        std::ostringstream msg;
+        msg << "Error performing cudaMemcpy: " << cudaGetErrorName(rc) << " -- "
+            << cudaGetErrorString(rc);
+        throw std::runtime_error(msg.str());
+    }
+    
+    // Then copy data from temp buffer to destination to avoid overlap
+    rc = cudaMemcpy(dest, tempBuffer, count, cudaMemcpyDeviceToDevice);
+    if (rc) {
+        std::ostringstream msg;
+        msg << "Error performing cudaMemcpy: " << cudaGetErrorName(rc) << " -- "
+            << cudaGetErrorString(rc);
+        throw std::runtime_error(msg.str());
+    }
+    
+    cudaFree(tempBuffer);
+    
+    return dest;
 }
 
 cuda_buffer::cuda_buffer(int nitems,
