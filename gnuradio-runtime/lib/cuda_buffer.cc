@@ -35,7 +35,7 @@ void* cuda_buffer::cuda_memmove(void* dest, const void* src, std::size_t count)
 {
     // Would a kernel that checks for overlap and then copies front-to-back or
     // back-to-front be faster than using cudaMemcpy with a temp buffer?
-    
+
     // Allocate temp buffer
     void* tempBuffer = nullptr;
     cudaError_t rc = cudaSuccess;
@@ -46,7 +46,7 @@ void* cuda_buffer::cuda_memmove(void* dest, const void* src, std::size_t count)
             << cudaGetErrorString(rc);
         throw std::runtime_error(msg.str());
     }
-    
+
     // First copy data from source to temp buffer
     rc = cudaMemcpy(tempBuffer, src, count, cudaMemcpyDeviceToDevice);
     if (rc) {
@@ -55,7 +55,7 @@ void* cuda_buffer::cuda_memmove(void* dest, const void* src, std::size_t count)
             << cudaGetErrorString(rc);
         throw std::runtime_error(msg.str());
     }
-    
+
     // Then copy data from temp buffer to destination to avoid overlap
     rc = cudaMemcpy(dest, tempBuffer, count, cudaMemcpyDeviceToDevice);
     if (rc) {
@@ -64,9 +64,9 @@ void* cuda_buffer::cuda_memmove(void* dest, const void* src, std::size_t count)
             << cudaGetErrorString(rc);
         throw std::runtime_error(msg.str());
     }
-    
+
     cudaFree(tempBuffer);
-    
+
     return dest;
 }
 

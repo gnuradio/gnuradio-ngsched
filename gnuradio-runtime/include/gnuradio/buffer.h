@@ -25,8 +25,6 @@
 #include <memory>
 
 
-#define BUFFER_DEBUG 1
-
 namespace gr {
 
 class vmcircbuf;
