@@ -57,7 +57,7 @@ host_buffer::host_buffer(int nitems,
 
 host_buffer::~host_buffer() {}
 
-bool host_buffer::post_work(int nitems)
+void host_buffer::post_work(int nitems)
 {
 #ifdef BUFFER_DEBUG
     std::ostringstream msg;
@@ -67,7 +67,7 @@ bool host_buffer::post_work(int nitems)
 #endif
 
     if (nitems <= 0) {
-        return true;
+        return;
     }
 
     // NOTE: when this function is called the write pointer has not yet been
@@ -95,8 +95,6 @@ bool host_buffer::post_work(int nitems)
         GR_LOG_ERROR(d_logger, msg.str());
         throw std::runtime_error(msg.str());
     }
-
-    return true;
 }
 
 bool host_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)

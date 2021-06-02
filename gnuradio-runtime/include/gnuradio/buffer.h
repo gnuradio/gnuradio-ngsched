@@ -183,7 +183,7 @@ public:
      * \brief Function to be executed after this object's owner completes the
      * call to general_work()
      */
-    virtual bool post_work(int nitems) = 0;
+    virtual void post_work(int nitems) = 0;
 
     /*!
      * \brief Returns true when the current thread is ready to call the callback,

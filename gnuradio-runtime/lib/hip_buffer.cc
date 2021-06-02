@@ -30,7 +30,7 @@ hip_buffer::hip_buffer(int nitems,
 
 hip_buffer::~hip_buffer() {}
 
-bool hip_buffer::post_work(int nitems)
+void hip_buffer::post_work(int nitems)
 {
 #if 0
     switch(get_buffer_context()) {
@@ -58,7 +58,7 @@ bool hip_buffer::post_work(int nitems)
         break;
     }
 #endif
-    return true;
+    return;
 }
 
 bool hip_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)

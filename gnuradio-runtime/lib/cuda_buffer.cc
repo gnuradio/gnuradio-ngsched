@@ -98,7 +98,7 @@ cuda_buffer::~cuda_buffer()
     }
 }
 
-bool cuda_buffer::post_work(int nitems)
+void cuda_buffer::post_work(int nitems)
 {
 #ifdef BUFFER_DEBUG
     std::ostringstream msg;
@@ -108,7 +108,7 @@ bool cuda_buffer::post_work(int nitems)
 #endif
 
     if (nitems <= 0) {
-        return true;
+        return;
     }
 
     cudaError_t rc = cudaSuccess;
@@ -155,7 +155,7 @@ bool cuda_buffer::post_work(int nitems)
         throw std::runtime_error(msg.str());
     }
 
-    return true;
+    return;
 }
 
 bool cuda_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)

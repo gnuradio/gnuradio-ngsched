@@ -12,6 +12,7 @@
 #define INCLUDED_GR_RUNTIME_BUFFER_CONTEXT_H
 
 #include <ostream>
+#include <gnuradio/api.h>
 
 namespace gr {
 
@@ -23,7 +24,7 @@ enum class buffer_context {
     DEVICE_TO_DEVICE
 };
 
-std::ostream& operator<<(std::ostream& os, const buffer_context& context);
+GR_RUNTIME_API std::ostream& operator<<(std::ostream& os, const buffer_context& context);
 } // namespace gr
 
 #endif

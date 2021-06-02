@@ -28,9 +28,9 @@ public:
      * is used for data transfer (and perhaps other administrative
      * activities)
      *
-     * \param nitems is the minimum number of items the buffer will hold.
+     * \param nitems is the number of items produced by the general_work() function.
      */
-    bool post_work(int nitems);
+    void post_work(int nitems);
 
     /*!
      * \brief Do actual buffer allocation. Inherited from buffer_single_mapped.
