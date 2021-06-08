@@ -158,7 +158,7 @@ void cuda_buffer::post_work(int nitems)
     return;
 }
 
-bool cuda_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)
+bool cuda_buffer::do_allocate_buffer(size_t final_nitems, size_t sizeof_item)
 {
 #ifdef BUFFER_DEBUG
     {

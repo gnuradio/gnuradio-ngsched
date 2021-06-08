@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2020 Free Software Foundation, Inc.
+ * Copyright 2021 BlackLynx, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -19,6 +19,18 @@
 
 namespace gr {
 
+/*!
+ * \brief Subclass of buffer_single_mapped for supporting blocks using NVidia's
+ * CUDA runtime.
+ *
+ * This buffer_single_mapped subclass is designed to provide easy buffer support
+ * for blocks using NVidia's CUDA runtime. The class acts as a wrapper for two
+ * underlying buffers, a host buffer allocated using the cudaMallocHost()
+ * function and a device buffer allocated using the cudaMalloc() function.
+ * The logic contained within this class manages both buffers and the movement
+ * of data between the two depending on the buffer's assigned context.
+ *
+ */
 class GR_RUNTIME_API cuda_buffer : public buffer_single_mapped
 {
 public:
@@ -41,7 +53,7 @@ public:
     /*!
      * \brief Do actual buffer allocation. Inherited from buffer_single_mapped.
      */
-    bool do_allocate_buffer(int final_nitems, size_t sizeof_item);
+    bool do_allocate_buffer(size_t final_nitems, size_t sizeof_item);
 
     /*!
      * \brief Return a pointer to the write buffer depending on the context

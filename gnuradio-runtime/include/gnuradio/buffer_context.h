@@ -11,8 +11,8 @@
 #ifndef INCLUDED_GR_RUNTIME_BUFFER_CONTEXT_H
 #define INCLUDED_GR_RUNTIME_BUFFER_CONTEXT_H
 
-#include <ostream>
 #include <gnuradio/api.h>
+#include <ostream>
 
 namespace gr {
 

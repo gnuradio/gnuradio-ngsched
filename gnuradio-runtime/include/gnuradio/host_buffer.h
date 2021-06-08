@@ -17,6 +17,16 @@
 
 namespace gr {
 
+/*!
+ * \brief Subclass of buffer_single_mapped meant to simulate how a custom buffer
+ * for an accelerated device would work but using only host buffers.
+ *
+ * This class acts as a wrapper for two underlying buffers, a host buffer and a
+ * and a simulated device buffer that is also allocated on the host. The logic
+ * contained within this class manages both buffers and the movement of data
+ * between the two depending on the buffer's assigned context.
+ *
+ */
 class GR_RUNTIME_API host_buffer : public buffer_single_mapped
 {
 public:
@@ -39,7 +49,7 @@ public:
     /*!
      * \brief Do actual buffer allocation. Inherited from buffer_single_mapped.
      */
-    bool do_allocate_buffer(int final_nitems, size_t sizeof_item);
+    bool do_allocate_buffer(size_t final_nitems, size_t sizeof_item);
 
     /*!
      * \brief Return a pointer to the write buffer depending on the context

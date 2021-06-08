@@ -61,7 +61,7 @@ void hip_buffer::post_work(int nitems)
     return;
 }
 
-bool hip_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)
+bool hip_buffer::do_allocate_buffer(size_t final_nitems, size_t sizeof_item)
 {
     d_buffer.reset(new char[final_nitems * sizeof_item]);
     return true;

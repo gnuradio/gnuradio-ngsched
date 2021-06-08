@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2020 Free Software Foundation, Inc.
+ * Copyright 2021 BlackLynx, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -16,6 +16,18 @@
 
 namespace gr {
 
+/*!
+ * \brief Subclass of buffer_single_mapped for supporting blocks using AMD's
+ * Heterogeneous-compute Interface for Portability (HIP) runtime.
+ *
+ * This buffer_single_mapped subclass is designed to provide easy buffer support
+ * for blocks using AMD's HIP runtime. The class acts as a wrapper for two
+ * underlying buffers, a host buffer allocated using the **FUNCTION**()
+ * function and a device buffer allocated using the **FUNCTION**() function.
+ * The logic contained within this class manages both buffers and the movement
+ * of data between the two depending on the buffer's assigned context.
+ *
+ */
 class GR_RUNTIME_API hip_buffer : public buffer_single_mapped
 {
 public:
@@ -35,7 +47,7 @@ public:
     /*!
      * \brief Do actual buffer allocation. Inherited from buffer_single_mapped.
      */
-    bool do_allocate_buffer(int final_nitems, size_t sizeof_item);
+    bool do_allocate_buffer(size_t final_nitems, size_t sizeof_item);
 
     /*!
      * \brief Callback function that the scheduler will call when it determines

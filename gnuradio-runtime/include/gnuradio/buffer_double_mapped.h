@@ -55,7 +55,7 @@ public:
      * Inherited from buffer class.
      * @param nitems is the number of items produced by the general_work() function.
      */
-    virtual void post_work(int nitems) { }
+    virtual void post_work(int nitems) {}
 
 protected:
     /*!

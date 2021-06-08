@@ -85,9 +85,10 @@ protected:
     allocate_buffer(int nitems, size_t sizeof_item, uint64_t downstream_lcm_nitems);
 
     /*!
-     * \brief Do actual buffer allocation
+     * \brief Do actual buffer allocation. This is intended (required) to be
+     * handled by the derived class.
      */
-    virtual bool do_allocate_buffer(int final_nitems, size_t sizeof_item) = 0;
+    virtual bool do_allocate_buffer(size_t final_nitems, size_t sizeof_item) = 0;
 
     virtual unsigned index_add(unsigned a, unsigned b)
     {

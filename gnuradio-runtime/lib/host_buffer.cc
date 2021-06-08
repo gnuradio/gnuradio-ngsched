@@ -97,7 +97,7 @@ void host_buffer::post_work(int nitems)
     }
 }
 
-bool host_buffer::do_allocate_buffer(int final_nitems, size_t sizeof_item)
+bool host_buffer::do_allocate_buffer(size_t final_nitems, size_t sizeof_item)
 {
 #ifdef BUFFER_DEBUG
     {
