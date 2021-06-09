@@ -32,7 +32,7 @@ public:
     /*!
      * \brief Return number of items available for reading.
      */
-    virtual int items_available(); // const
+    virtual int items_available() const;
 
     /*!
      * \brief Return true if thread is ready to call input_blocked_callback,

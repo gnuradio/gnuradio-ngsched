@@ -59,9 +59,8 @@ static int min_available_space(block* m,
                                int min_noutput_items,
                                int& output_idx)
 {
-    gr::logger_ptr logger;
-    gr::logger_ptr debug_logger;
-    gr::configure_default_loggers(logger, debug_logger, "min_available_space");
+    LOG(gr::logger_ptr logger; gr::logger_ptr debug_logger;
+        gr::configure_default_loggers(logger, debug_logger, "min_available_space"););
 
     int min_space = std::numeric_limits<int>::max();
     if (min_noutput_items == 0)

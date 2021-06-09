@@ -89,7 +89,7 @@ void buffer_reader::declare_sample_delay(unsigned delay)
 
 unsigned buffer_reader::sample_delay() const { return d_attr_delay; }
 
-int buffer_reader::items_available() // const
+int buffer_reader::items_available() const
 {
     int available = d_buffer->index_sub(d_buffer->d_write_index, d_read_index);
 

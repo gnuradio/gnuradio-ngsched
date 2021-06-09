@@ -41,7 +41,8 @@ set(CUDA_SOURCES )
 
 if (CUDA_FOUND)
   set(CUDA_SOURCES
-    cuda_buffer.cc)
+    cuda_buffer.cc
+    )
 endif()
 
 #Generate sine table header file for Math part of library
