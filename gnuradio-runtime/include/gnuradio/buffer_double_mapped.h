@@ -41,6 +41,8 @@ MAKE_CUSTOM_BUFFER_TYPE(DEFAULT_NON_CUSTOM, make_buffer_double_mapped);
 class GR_RUNTIME_API buffer_double_mapped : public buffer
 {
 public:
+    static buffer_type type;
+
     gr::logger_ptr d_logger;
     gr::logger_ptr d_debug_logger;
 

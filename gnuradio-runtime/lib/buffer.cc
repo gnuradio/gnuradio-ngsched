@@ -98,9 +98,10 @@ buffer_sptr make_buffer(int nitems,
     std::ostringstream msg;
 #endif
 
-    // Ask the buffer's owner what its buffer_type is and then delegate creation
-    // do that buffer_type
-    buffer_type buftype = buf_owner->get_buffer_type();
+    // This function is no longer called by flat_flowgraph functions and
+    // therefore is somewhat deprecated. It will create and return a
+    // buffer_double_mapped subclass by default.
+    buffer_type buftype = buffer_double_mapped::type;
     return buftype.make_buffer(
         nitems, sizeof_item, downstream_lcm_nitems, link, buf_owner);
 }

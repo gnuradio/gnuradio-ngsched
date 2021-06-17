@@ -15,8 +15,10 @@
 #include <gnuradio/runtime_types.h>
 
 #include <cstdint>
+#include <functional>
 #include <mutex>
 #include <string>
+#include <vector>
 
 namespace gr {
 
@@ -33,18 +35,26 @@ public:
     virtual ~buffer_type_base(){};
 
     // Do not allow copying or assignment
-    buffer_type_base(buffer_type_base const&) = delete;
+    //    buffer_type_base(buffer_type_base const&) = delete;
+
+    // Temporarily define copy constructor to work around pybind issue with
+    // default non-copyable function argument
+    buffer_type_base(buffer_type_base const& other)
+        : d_name(other.d_name), d_factory(other.d_factory)
+    {
+    }
+
     void operator=(buffer_type_base const&) = delete;
 
     // Allow equality and inequality comparison
     bool operator==(const buffer_type_base& other) const
     {
-        return d_value == other.d_value;
+        return d_name == other.d_name;
     }
 
     bool operator!=(const buffer_type_base& other) const
     {
-        return d_value != other.d_value;
+        return d_name != other.d_name;
     }
 
     // Do not allow other comparison (just in case)
@@ -82,20 +92,13 @@ protected:
     }
 };
 
-typedef const buffer_type_base buffer_type_t;
-
+typedef const buffer_type_base& buffer_type;
+typedef std::vector<std::reference_wrapper<const buffer_type_base>> gr_vector_buffer_type;
 
 #define MAKE_CUSTOM_BUFFER_TYPE(CLASSNAME, FACTORY_FUNC_PTR)                      \
     class GR_RUNTIME_API buftype_##CLASSNAME : public buffer_type_base            \
     {                                                                             \
     public:                                                                       \
-        static buffer_type get()                                                  \
-        {                                                                         \
-            static buftype_##CLASSNAME instance;                                  \
-            return instance;                                                      \
-        }                                                                         \
-                                                                                  \
-    private:                                                                      \
         buftype_##CLASSNAME() : buffer_type_base(#CLASSNAME, FACTORY_FUNC_PTR) {} \
     };
 

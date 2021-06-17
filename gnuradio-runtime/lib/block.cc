@@ -412,27 +412,23 @@ void block::allocate_detail(int ninputs,
     set_detail(detail);
 }
 
-buffer_sptr block::replace_buffer(uint32_t out_port, block_sptr block_owner)
+buffer_sptr
+block::replace_buffer(uint32_t src_port, uint32_t dst_port, block_sptr block_owner)
 {
     block_detail_sptr detail_ = detail();
-    buffer_sptr orig_buffer = detail_->output(out_port);
+    buffer_sptr orig_buffer = detail_->output(src_port);
+
+    buffer_type buftype = block_owner->output_signature()->stream_buffer_type(dst_port);
 
     // Make a new buffer but this time use the passed in block as the owner
-    buffer_sptr new_buffer = make_buffer(orig_buffer->bufsize(),
-                                         orig_buffer->get_sizeof_item(),
-                                         orig_buffer->get_downstream_lcm_nitems(),
-                                         shared_from_base<block>(),
-                                         block_owner);
+    buffer_sptr new_buffer = buftype.make_buffer(orig_buffer->bufsize(),
+                                                 orig_buffer->get_sizeof_item(),
+                                                 orig_buffer->get_downstream_lcm_nitems(),
+                                                 shared_from_base<block>(),
+                                                 block_owner);
 
-    detail_->set_output(out_port, new_buffer);
+    detail_->set_output(src_port, new_buffer);
     return new_buffer;
-}
-
-buffer_type block::get_buffer_type()
-{
-    // This is the default buffer_type for all software blocks. It results in a
-    // buffer_double_mapped instance being created for the block's output.
-    return buftype_DEFAULT_NON_CUSTOM::get();
 }
 
 bool block::update_rate() const { return d_update_rate; }
@@ -484,6 +480,10 @@ buffer_sptr block::allocate_buffer(int port,
                  "Block: " + name() + " allocated buffer for output " + identifier());
 #endif
 
+    // Grab the buffer type associated with the output port and use it to
+    // create the specified type of buffer
+    buffer_type buftype = output_signature()->stream_buffer_type(port);
+
     try {
 #ifdef BUFFER_DEBUG
         // BUFFER DEBUG
@@ -504,18 +504,18 @@ buffer_sptr block::allocate_buffer(int port,
         }
         GR_LOG_DEBUG(d_logger, msg.str());
 #endif
-        buf = make_buffer(nitems,
-                          item_size,
-                          downstream_lcm_nitems,
-                          shared_from_base<block>(),
-                          shared_from_base<block>());
+        buf = buftype.make_buffer(nitems,
+                                  item_size,
+                                  downstream_lcm_nitems,
+                                  shared_from_base<block>(),
+                                  shared_from_base<block>());
 
     } catch (std::bad_alloc&) {
-        buf = make_buffer(nitems,
-                          item_size,
-                          downstream_lcm_nitems,
-                          shared_from_base<block>(),
-                          shared_from_base<block>());
+        buf = buftype.make_buffer(nitems,
+                                  item_size,
+                                  downstream_lcm_nitems,
+                                  shared_from_base<block>(),
+                                  shared_from_base<block>());
     }
 
     // Set the max noutput items size here to make sure it's always

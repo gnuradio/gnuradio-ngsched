@@ -539,15 +539,8 @@ public:
      * that is incompatible with the default buffer type created by this block.
      *
      */
-    buffer_sptr replace_buffer(uint32_t out_port, block_sptr block_owner);
-
-    /*!
-     * \brief Return the type of custom buffer used by the block
-     *
-     * \details
-     * Blocks that wish to allocate custom buffers should override this function.
-     */
-    virtual buffer_type get_buffer_type();
+    buffer_sptr
+    replace_buffer(uint32_t src_port, uint32_t dst_port, block_sptr block_owner);
 
     // --------------- Performance counter functions -------------
 
