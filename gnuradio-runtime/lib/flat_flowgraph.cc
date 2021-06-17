@@ -236,7 +236,7 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
                 // type of buffer that the block needs
                 std::ostringstream msg;
                 msg << "Block: " << grblock->identifier()
-                    << "replacing upstream block: " << src_grblock->identifier()
+                    << " replacing upstream block: " << src_grblock->identifier()
                     << " buffer with a custom buffer";
                 GR_LOG_DEBUG(d_debug_logger, msg.str());
                 src_buffer = src_grblock->replace_buffer(src_port, dst_port, grblock);
@@ -257,9 +257,10 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
         // Set buffer's context
         src_buffer->set_context(context);
 
-        GR_LOG_DEBUG(d_debug_logger,
-                     "Setting input " + std::to_string(dst_port) + " from edge " +
-                         (*e).identifier());
+        std::ostringstream msg;
+        msg << "Setting input " << dst_port << " from edge " << (*e).identifier()
+            << " context: " << context;
+        GR_LOG_DEBUG(d_debug_logger, msg.str());
 
         detail->set_input(dst_port,
                           buffer_add_reader(src_buffer,
