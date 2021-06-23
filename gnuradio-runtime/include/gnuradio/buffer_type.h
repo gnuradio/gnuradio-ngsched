@@ -29,6 +29,9 @@ GR_RUNTIME_API void foobar(int arg);
 
 
 
+/*!
+ * \brief Base class for describing a buffer's type.
+ */
 class GR_RUNTIME_API buffer_type_base
 {
 public:
@@ -62,9 +65,14 @@ public:
     bool operator>(const buffer_type_base& other) = delete;
     bool operator<=(const buffer_type_base& other) = delete;
     bool operator>=(const buffer_type_base& other) = delete;
-
+    /*!
+     * \brief Get the human-readable name of the type
+     */
     const std::string& name() const { return d_name; }
 
+    /*!
+     * \brief Make and return a buffer subclass of the corresponding type
+     */
     inline buffer_sptr make_buffer(int nitems,
                                    size_t sizeof_item,
                                    uint64_t downstream_lcm_nitems,
@@ -76,19 +84,13 @@ public:
     }
 
 protected:
-    static uint32_t s_nextId;
-    static std::mutex s_mutex;
-
-    uint32_t d_value;
-    std::string d_name;
+    const std::string d_name;
     factory_func_ptr d_factory;
 
     // Protected constructor
     buffer_type_base(const char* name, factory_func_ptr factory_func)
         : d_name(name), d_factory(factory_func)
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        d_value = s_nextId++;
     }
 };
 

@@ -328,7 +328,6 @@ block_executor::state block_executor::run_one_iteration()
         d_input_done.resize(d->ninputs());
         d_output_items.resize(0);
         d_start_nitems_read.resize(d->ninputs());
-        //        LOG(GR_LOG_INFO(d_debug_logger, "sink"););
         LOG(std::ostringstream msg; msg << m << " -- sink";
             GR_LOG_INFO(d_debug_logger, msg.str()););
 
@@ -366,7 +365,6 @@ block_executor::state block_executor::run_one_iteration()
             GR_LOG_INFO(d_debug_logger, msg.str()););
 
         if (noutput_items == 0) { // we're blocked on input
-            //            LOG(GR_LOG_INFO(d_debug_logger, "BLKD_IN"););
             LOG(std::ostringstream msg; msg << m << " -- BLKD_IN";
                 GR_LOG_INFO(d_debug_logger, msg.str()));
             return BLKD_IN;
@@ -414,7 +412,6 @@ block_executor::state block_executor::run_one_iteration()
             goto were_done;
 
         if (noutput_items == 0) { // we're output blocked
-            //            LOG(GR_LOG_INFO(d_debug_logger, "BLKD_OUT"););
             LOG(std::ostringstream msg; msg << m << " -- BLKD_OUT";
                 GR_LOG_INFO(d_debug_logger, msg.str()));
 
@@ -691,7 +688,6 @@ block_executor::state block_executor::run_one_iteration()
     GR_LOG_ERROR(d_logger, "invalid state while going through iteration state machine");
 
 were_done:
-    //    LOG(GR_LOG_INFO(d_debug_logger, "we're done"););
     LOG(std::ostringstream msg; msg << m << " -- we're done";
         GR_LOG_INFO(d_debug_logger, msg.str()));
     d->set_done(true);

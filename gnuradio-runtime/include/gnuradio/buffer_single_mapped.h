@@ -157,13 +157,22 @@ protected:
      * the caller to pass in the desired buffer and corresponding buffer
      * manipulation functions (memcpy and memmove).
      *
+     * The input blocked callback is called when a reader needs to read more
+     * data than is available in a buffer and the available data is located at
+     * the end of the buffer. The input blocked callback will attempt to move
+     * any data located at the beginning of the buffer "down", and will then
+     * attempt to copy from the end of the buffer back to the beginning of the
+     * buffer. This process explicitly handles wrapping for a single mapped
+     * buffer and will realign the data at the beginning of the buffer such
+     * that the reader is able to read the available data and becomes unblocked.
+     *
      * \param items_required is the number of items required by the reader
      * \param items_avail is the number of items available
      * \param read_index is the current read index of the buffer reader caller
      * \param buffer_ptr is the pointer to the desired buffer
      * \param memcpy_func is a pointer to a memcpy function appropriate for the
      *                    the passed in buffer
-     * \param memmove_func is a pointer to a memmove function appropraite for
+     * \param memmove_func is a pointer to a memmove function appropriate for
      *                     the passed in buffer
      */
     virtual bool input_blocked_callback_logic(int items_required,
@@ -181,10 +190,19 @@ protected:
      * the caller to pass in the desired buffer and corresponding buffer
      * manipulation functions (memcpy and memmove).
      *
+     * The output blocked callback is called when a block needs to write data
+     * to the end of a single mapped buffer but not enough free space exists to
+     * write the data before the end of the buffer is reached. The output blocked
+     * callback will attempt to copy data located towards the end of a single
+     * mapped buffer back to the beginning of the buffer. This process explicitly
+     * handles wrapping for a single mapped buffer and will realign data located
+     * at the end of a buffer back to the beginning of the buffer such that the
+     * writing block can write its output into the buffer after the existing data.
+     *
      * \param output_multiple
      * \param force run the callback disregarding the internal checks
      * \param buffer_ptr is the pointer to the desired buffer
-     * \param memmove_func is a pointer to a memmove function appropraite for
+     * \param memmove_func is a pointer to a memmove function appropriate for
      *                     the passed in buffer
      */
     virtual bool output_blocked_callback_logic(int output_multiple,

@@ -98,7 +98,7 @@ buffer_sptr make_buffer(int nitems,
     std::ostringstream msg;
 #endif
 
-    // This function is no longer called by flat_flowgraph functions and
+    // NOTE: This function is no longer called by flat_flowgraph functions and
     // therefore is somewhat deprecated. It will create and return a
     // buffer_double_mapped subclass by default.
     buffer_type buftype = buffer_double_mapped::type;

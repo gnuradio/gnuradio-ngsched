@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(buffer_type.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(699686ed3c0133c96bdada2946c83fd3)                     */
+/* BINDTOOL_HEADER_FILE_HASH(1546cd0bde275dfac8f22673aa13634c)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -25,7 +25,7 @@ namespace py = pybind11;
 
 #include <gnuradio/buffer_type.h>
 // pydoc.h is automatically generated in the build directory
-//#include <buffer_type_pydoc.h>
+#include <buffer_type_pydoc.h>
 
 // NOTE: buffer_type is really a typedef of const buffer_type_base& so
 // buffer_type_base is used below because that's the type we really care about
@@ -35,7 +35,7 @@ void bind_buffer_type(py::module& m)
     using buffer_type_base = ::gr::buffer_type_base;
 
 
-    py::class_<buffer_type_base>(m, "buffer_type_base")
+    py::class_<buffer_type_base>(m, "buffer_type_base", D(buffer_type_base))
 
-        .def("name", &buffer_type_base::name);
+        .def("name", &buffer_type_base::name, D(buffer_type_base, name));
 }
