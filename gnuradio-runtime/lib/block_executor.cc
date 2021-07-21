@@ -59,8 +59,11 @@ static int min_available_space(block* m,
                                int min_noutput_items,
                                int& output_idx)
 {
-    LOG(gr::logger_ptr logger; gr::logger_ptr debug_logger;
-        gr::configure_default_loggers(logger, debug_logger, "min_available_space"););
+#if ENABLE_LOGGING
+    gr::logger_ptr logger;
+    gr::logger_ptr debug_logger;
+    gr::configure_default_loggers(logger, debug_logger, "min_available_space");
+#endif
 
     int min_space = std::numeric_limits<int>::max();
     if (min_noutput_items == 0)
@@ -528,10 +531,6 @@ block_executor::state block_executor::run_one_iteration()
 
             buffer_reader_sptr in_buf = d->input(i);
 
-            LOG(std::ostringstream msg;
-                msg << m << " (t: " << this << ") -- pre-callback";
-                GR_LOG_DEBUG(d_debug_logger, msg.str()));
-
             if (in_buf->input_blkd_cb_ready(d_ninput_items_required[i])) {
                 gr::custom_lock lock(std::ref(*in_buf->mutex()), in_buf->buffer());
                 if (in_buf->input_blocked_callback(d_ninput_items_required[i],
@@ -677,8 +676,8 @@ block_executor::state block_executor::run_one_iteration()
                 GR_LOG_DEBUG(d_debug_logger, msg.str()););
             gr::custom_lock lock(std::ref(*out_buf->mutex()), out_buf);
             out_buf->output_blocked_callback(m->output_multiple(), true);
-            LOG(std::ostringstream msg; msg << m << " -- NO OUTPUT -- [" << i
-                                            << "] -- OUTPUT BLOCKED CBACK: " << rc;
+            LOG(std::ostringstream msg;
+                msg << m << " -- NO OUTPUT -- [" << i << "] -- OUTPUT BLOCKED CBACK ";
                 GR_LOG_DEBUG(d_debug_logger, msg.str()););
         }
 
