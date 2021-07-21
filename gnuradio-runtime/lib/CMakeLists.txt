@@ -65,6 +65,7 @@ add_library(gnuradio-runtime
   hier_block2.cc
   hier_block2_detail.cc
   high_res_timer.cc
+  host_buffer.cc
   io_signature.cc
   local_sighandler.cc
   logger.cc
