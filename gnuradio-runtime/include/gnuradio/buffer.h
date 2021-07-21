@@ -12,11 +12,13 @@
 #define INCLUDED_GR_RUNTIME_BUFFER_H
 
 #include <gnuradio/api.h>
+#include <gnuradio/buffer_context.h>
 #include <gnuradio/custom_lock.h>
 #include <gnuradio/logger.h>
 #include <gnuradio/runtime_types.h>
 #include <gnuradio/tags.h>
 #include <gnuradio/thread/thread.h>
+
 #include <boost/weak_ptr.hpp>
 #include <iostream>
 #include <map>
@@ -29,7 +31,7 @@ class vmcircbuf;
 class buffer_reader;
 class buffer_reader_sm;
 
-enum class BufferMappingType { DoubleMapped, SingleMapped };
+enum class buffer_mapping_type { double_mapped, single_mapped };
 
 /*!
  * \brief Allocate a buffer that holds at least \p nitems of size \p sizeof_item.
@@ -40,7 +42,11 @@ enum class BufferMappingType { DoubleMapped, SingleMapped };
  *
  * \param nitems is the minimum number of items the buffer will hold.
  * \param sizeof_item is the size of an item in bytes.
+ * \param downstream_lcm_nitems is the least common multiple of the items to
+ *                              read by downstream block(s)
  * \param link is the block that writes to this buffer.
+ * \param buf_owner is the block that owns the buffer which may or may not
+ *                     be the same as the block that writes to this buffer
  */
 GR_RUNTIME_API buffer_sptr make_buffer(int nitems,
                                        size_t sizeof_item,
@@ -63,7 +69,7 @@ public:
     /*!
      * \brief return the buffer's mapping type
      */
-    BufferMappingType get_mapping_type() { return d_buf_map_type; }
+    buffer_mapping_type get_mapping_type() { return d_buf_map_type; }
 
     /*!
      * \brief return number of items worth of space available for writing
@@ -87,6 +93,13 @@ public:
      * space_available() items.
      */
     virtual void* write_pointer();
+
+    /*!
+     * \brief return pointer to read buffer.
+     *
+     * The return value points to at least items_available() items.
+     */
+    virtual const void* _read_pointer(unsigned int read_index);
 
     /*!
      * \brief tell buffer that we wrote \p nitems into it
@@ -167,6 +180,32 @@ public:
     }
 
     /*!
+     * \brief Function to be executed after this object's owner completes the
+     * call to general_work()
+     */
+    virtual void post_work(int nitems) = 0;
+
+    /*!
+     * \brief Returns true when the current thread is ready to call the callback,
+     * false otherwise. Note if input_blocked_callback is overridden then this
+     * function should also be overridden.
+     */
+    virtual bool input_blkd_cb_ready(int items_required, unsigned read_index)
+    {
+        return false;
+    }
+
+    /*!
+     * \brief Callback function that the scheduler will call when it determines
+     * that the input is blocked. Override this function if needed.
+     */
+    virtual bool
+    input_blocked_callback(int items_required, int items_avail, unsigned read_index)
+    {
+        return false;
+    }
+
+    /*!
      * \brief Returns true if the current thread is ready to execute
      * output_blocked_callback(), false otherwise. Note if the default
      * output_blocked_callback is overridden this function should also be
@@ -220,6 +259,11 @@ public:
 
     // -------------------------------------------------------------------------
 
+    /*!
+     * \brief assign buffer context
+     */
+    void set_context(const buffer_context& context);
+
 private:
     friend class buffer_reader;
     friend class buffer_reader_sm;
@@ -236,7 +280,7 @@ private:
 protected:
     char* d_base;           // base address of buffer inside d_vmcircbuf.
     unsigned int d_bufsize; // in items
-    BufferMappingType d_buf_map_type;
+    buffer_mapping_type d_buf_map_type;
 
     // Keep track of maximum sample delay of any reader; Only prune tags past this.
     unsigned d_max_reader_delay;
@@ -271,6 +315,8 @@ protected:
     uint64_t d_downstream_lcm_nitems;
     uint64_t d_write_multiple;
 
+    buffer_context d_context;
+
     /*!
      * \brief  Increment read or write index for this buffer
      */
@@ -299,7 +345,7 @@ protected:
      * dependent boundary.  This is typically the system page size, but
      * under MS windows is 64KB.
      */
-    buffer(BufferMappingType buftype,
+    buffer(buffer_mapping_type buftype,
            int nitems,
            size_t sizeof_item,
            uint64_t downstream_lcm_nitems,

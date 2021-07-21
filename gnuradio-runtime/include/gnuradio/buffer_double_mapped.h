@@ -13,6 +13,7 @@
 
 #include <gnuradio/api.h>
 #include <gnuradio/buffer.h>
+#include <gnuradio/buffer_type.h>
 #include <gnuradio/logger.h>
 #include <gnuradio/runtime_types.h>
 
@@ -28,7 +29,10 @@ class vmcircbuf;
 GR_RUNTIME_API buffer_sptr make_buffer_double_mapped(int nitems,
                                                      size_t sizeof_item,
                                                      uint64_t downstream_lcm_nitems,
-                                                     block_sptr link = block_sptr());
+                                                     block_sptr link = block_sptr(),
+                                                     block_sptr buf_owner = block_sptr());
+
+MAKE_CUSTOM_BUFFER_TYPE(DEFAULT_NON_CUSTOM, make_buffer_double_mapped);
 
 /*!
  * \brief Single writer, multiple reader fifo.
@@ -37,6 +41,8 @@ GR_RUNTIME_API buffer_sptr make_buffer_double_mapped(int nitems,
 class GR_RUNTIME_API buffer_double_mapped : public buffer
 {
 public:
+    static buffer_type type;
+
     gr::logger_ptr d_logger;
     gr::logger_ptr d_debug_logger;
 
@@ -46,6 +52,12 @@ public:
      * \brief return number of items worth of space available for writing
      */
     virtual int space_available();
+
+    /*!
+     * Inherited from buffer class.
+     * @param nitems is the number of items produced by the general_work() function.
+     */
+    virtual void post_work(int nitems) {}
 
 protected:
     /*!
@@ -84,8 +96,12 @@ private:
                                                   uint64_t downstream_lcm_nitems,
                                                   block_sptr link,
                                                   block_sptr buf_owner);
-    friend GR_RUNTIME_API buffer_sptr make_buffer_double_mapped(
-        int nitems, size_t sizeof_item, uint64_t downstream_lcm_nitems, block_sptr link);
+    friend GR_RUNTIME_API buffer_sptr
+    make_buffer_double_mapped(int nitems,
+                              size_t sizeof_item,
+                              uint64_t downstream_lcm_nitems,
+                              block_sptr link,
+                              block_sptr buf_owner);
 
     std::unique_ptr<gr::vmcircbuf> d_vmcircbuf;
 
@@ -99,6 +115,7 @@ private:
      * \param downstream_lcm_nitems is the least common multiple of the items to
      *                              read by downstream blocks
      * \param link is the block that writes to this buffer.
+     * \param unused
      *
      * The total size of the buffer will be rounded up to a system
      * dependent boundary.  This is typically the system page size, but

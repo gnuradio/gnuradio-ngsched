@@ -34,11 +34,11 @@ buffer_add_reader(buffer_sptr buf, int nzero_preload, block_sptr link, int delay
 
     buffer_reader_sptr r;
 
-    if (buf->get_mapping_type() == BufferMappingType::DoubleMapped) {
+    if (buf->get_mapping_type() == buffer_mapping_type::double_mapped) {
         r.reset(new buffer_reader(
             buf, buf->index_sub(buf->d_write_index, nzero_preload), link));
         r->declare_sample_delay(delay);
-    } else if (buf->get_mapping_type() == BufferMappingType::SingleMapped) {
+    } else if (buf->get_mapping_type() == buffer_mapping_type::single_mapped) {
         r.reset(new buffer_reader_sm(
             buf, buf->index_sub(buf->d_write_index, nzero_preload), link));
         r->declare_sample_delay(delay);
@@ -89,7 +89,7 @@ void buffer_reader::declare_sample_delay(unsigned delay)
 
 unsigned buffer_reader::sample_delay() const { return d_attr_delay; }
 
-int buffer_reader::items_available() // const
+int buffer_reader::items_available() const
 {
     int available = d_buffer->index_sub(d_buffer->d_write_index, d_read_index);
 
@@ -109,7 +109,8 @@ int buffer_reader::items_available() // const
 
 const void* buffer_reader::read_pointer()
 {
-    return &d_buffer->d_base[d_read_index * d_buffer->d_sizeof_item];
+    // Delegate to buffer subclass
+    return d_buffer->_read_pointer(d_read_index);
 }
 
 void buffer_reader::update_read_pointer(int nitems)

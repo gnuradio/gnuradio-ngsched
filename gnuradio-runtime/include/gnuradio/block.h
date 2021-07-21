@@ -539,55 +539,8 @@ public:
      * that is incompatible with the default buffer type created by this block.
      *
      */
-    buffer_sptr replace_buffer(uint32_t out_port, block_sptr block_owner);
-
-    /*!
-     * \brief Return the type of custom buffer used by the block
-     *
-     * \details
-     * Blocks that wish to allocate custom buffers should override this function.
-     */
-    virtual buffer_type_t get_buffer_type()
-    {
-#if DEBUG_SINGLE_MAPPED
-        return buftype_CUSTOM_HOST::get();
-#else
-        return buftype_DEFAULT_NON_CUSTOM::get();
-#endif
-    }
-
-    /*!
-     * \brief Allocate a custom buffer for the block
-     *
-     * \details
-     * Blocks that wish to allocate custom buffers should override this function.
-     *
-     * \param size the size of the buffer to allocate in bytes
-     */
-    virtual char* allocate_custom_buffer(size_t size)
-    {
-#if DEBUG_SINGLE_MAPPED
-        return new char[size]();
-#else
-        return nullptr;
-#endif
-    }
-
-    /*!
-     * \brief Free a custom buffer previously allocated by allocate_custom_buffer()
-     *
-     * \details
-     * Blocks that wish to allocate custom buffers should override this function.
-     *
-     * \param buffer a pointer to the buffer
-     */
-    virtual void free_custom_buffer(char* buffer)
-    {
-#if DEBUG_SINGLE_MAPPED
-        delete[] buffer;
-#endif
-    }
-
+    buffer_sptr
+    replace_buffer(uint32_t src_port, uint32_t dst_port, block_sptr block_owner);
 
     // --------------- Performance counter functions -------------
 

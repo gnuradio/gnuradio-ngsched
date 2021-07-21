@@ -58,16 +58,17 @@ add_library(gnuradio-runtime
   block_gateway_impl.cc
   block_registry.cc
   buffer.cc
+  buffer_context.cc
   buffer_double_mapped.cc
   buffer_reader.cc
   buffer_reader_sm.cc
   buffer_single_mapped.cc
-  buffer_type.cc
   flat_flowgraph.cc
   flowgraph.cc
   hier_block2.cc
   hier_block2_detail.cc
   high_res_timer.cc
+  host_buffer.cc
   io_signature.cc
   local_sighandler.cc
   logger.cc
@@ -247,6 +248,7 @@ endif(ENABLE_GR_CTRLPORT)
 ########################################################################
 # Add misc conditional includes/definitions to gnuradio-runtime
 ########################################################################
+
 
 if(ENABLE_PERFORMANCE_COUNTERS)
   target_compile_definitions(gnuradio-runtime PUBLIC -DGR_PERFORMANCE_COUNTERS)
