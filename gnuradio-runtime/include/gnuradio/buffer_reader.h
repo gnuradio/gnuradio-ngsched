@@ -121,7 +121,7 @@ public:
      * \brief Return the block that reads via this reader.
      *
      */
-    block_sptr link() { return block_sptr(d_link); }
+    block_sptr link() const { return block_sptr(d_link); }
 
     /*!
      * \brief Given a [start,end), returns a vector all tags in the range.

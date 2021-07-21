@@ -32,7 +32,8 @@ int buffer_reader_sm::items_available() const
 
     if ((nitems_read() - sample_delay()) != d_buffer->nitems_written()) {
         if (d_buffer->d_write_index == d_read_index) {
-            if ((nitems_read() - sample_delay()) != d_buffer->nitems_written()) {
+            if ((nitems_read() - sample_delay()) !=
+                (d_buffer->nitems_written() + link()->history() - 1)) {
                 available = d_buffer->d_bufsize - d_read_index;
             }
         } else {

@@ -126,10 +126,6 @@ void flat_flowgraph::allocate_block_detail(basic_block_sptr block)
             // Calculate the LCM of downstream reader nitems
 #ifdef BUFFER_DEBUG
             msg.str("");
-            msg << "        BUFFER_TYPE: " << dgrblock->get_buffer_type().name();
-            GR_LOG_DEBUG(d_logger, msg.str());
-
-            msg.str("");
             msg << "        OUT MULTIPLE: " << multiple;
             GR_LOG_DEBUG(d_logger, msg.str());
 #endif
@@ -200,10 +196,8 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
 
         // In order to determine the buffer context, we need to examine both
         // the upstream and the downstream buffer_types
-        //        buffer_type src_buf_type = src_grblock->get_buffer_type();
         buffer_type src_buf_type =
             src_grblock->output_signature()->stream_buffer_type(src_port);
-        //        buffer_type dest_buf_type = grblock->get_buffer_type();
         buffer_type dest_buf_type =
             grblock->input_signature()->stream_buffer_type(dst_port);
 
@@ -238,7 +232,7 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
                 msg << "Block: " << grblock->identifier()
                     << " replacing upstream block: " << src_grblock->identifier()
                     << " buffer with a custom buffer";
-                GR_LOG_DEBUG(d_debug_logger, msg.str());
+                GR_LOG_DEBUG(d_logger, msg.str());
                 src_buffer = src_grblock->replace_buffer(src_port, dst_port, grblock);
             } else {
                 // Both the block and upstream block use incompatible buffer types
@@ -376,7 +370,6 @@ void flat_flowgraph::merge_connections(flat_flowgraph_sptr old_ffg)
         // Now deal with the fact that the block details might have
         // changed numbers of inputs and outputs vs. in the old
         // flowgraph.
-
         block->detail()->reset_nitem_counters();
         block->detail()->clear_tags();
     }
