@@ -206,7 +206,6 @@ int buffer_single_mapped::space_available()
         }
 
 #ifdef BUFFER_DEBUG
-        // BUFFER DEBUG
         std::ostringstream msg;
         msg << "[" << this << "] "
             << "space_available() called  (case: " << thecase

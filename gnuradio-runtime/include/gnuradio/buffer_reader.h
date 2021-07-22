@@ -51,7 +51,6 @@ class GR_RUNTIME_API buffer_reader
 {
 public:
 #ifdef BUFFER_DEBUG
-    // BUFFER DEBUG
     gr::logger_ptr d_logger;
     gr::logger_ptr d_debug_logger;
 #endif

@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2021 BlackLynx Inc..
+ * Copyright 2021 BlackLynx Inc.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -15,7 +15,7 @@
 namespace gr {
 
 
-class host_buffer : public buffer_single_mapped
+class GR_RUNTIME_API host_buffer : public buffer_single_mapped
 {
 public:
     static void* device_memcpy(void* dest, const void* src, std::size_t count);

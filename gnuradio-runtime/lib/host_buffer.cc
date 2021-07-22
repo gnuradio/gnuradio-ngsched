@@ -181,6 +181,7 @@ bool host_buffer::input_blocked_callback(int items_required,
         break;
 
     case buffer_context::DEVICE_TO_HOST:
+    case buffer_context::HOST_TO_HOST:
         // Adjust host buffer
         rc = input_blocked_callback_logic(
             items_required, items_avail, read_index, d_base, std::memcpy, std::memmove);
@@ -208,6 +209,7 @@ bool host_buffer::output_blocked_callback(int output_multiple, bool force)
     bool rc = false;
     switch (d_context) {
     case buffer_context::HOST_TO_DEVICE:
+    case buffer_context::HOST_TO_HOST:
         // Adjust host buffer
         rc = output_blocked_callback_logic(output_multiple, force, d_base, std::memmove);
         break;

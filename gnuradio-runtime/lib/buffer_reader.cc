@@ -51,7 +51,6 @@ buffer_add_reader(buffer_sptr buf, int nzero_preload, block_sptr link, int delay
     buf->d_readers.push_back(r.get());
 
 #ifdef BUFFER_DEBUG
-    // BUFFER DEBUG
     std::cerr << " [" << buf.get() << ";" << r.get()
               << "] buffer_add_reader() nzero_preload " << nzero_preload
               << " -- delay: " << delay << " -- history: " << link->history()
@@ -94,7 +93,6 @@ int buffer_reader::items_available() const
     int available = d_buffer->index_sub(d_buffer->d_write_index, d_read_index);
 
 #ifdef BUFFER_DEBUG
-    // BUFFER DEBUG
     std::ostringstream msg;
     msg << "[" << d_buffer << ";" << this << "] "
         << "items_available() WR_idx: " << d_buffer->d_write_index
@@ -118,7 +116,6 @@ void buffer_reader::update_read_pointer(int nitems)
     gr::thread::scoped_lock guard(*mutex());
 
 #ifdef BUFFER_DEBUG
-    // BUFFER DEBUG
     unsigned orig_rd_idx = d_read_index;
 #endif
 
@@ -126,7 +123,6 @@ void buffer_reader::update_read_pointer(int nitems)
     d_abs_read_offset += nitems;
 
 #ifdef BUFFER_DEBUG
-    // BUFFER DEBUG
     std::ostringstream msg;
     msg << "[" << d_buffer << ";" << this
         << "] update_read_pointer -- orig d_read_index: " << orig_rd_idx

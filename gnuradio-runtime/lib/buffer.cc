@@ -91,7 +91,6 @@ buffer_sptr make_buffer(int nitems,
                         block_sptr buf_owner)
 {
 #ifdef BUFFER_DEBUG
-    // BUFFER DEBUG
     gr::logger_ptr logger;
     gr::logger_ptr debug_logger;
     gr::configure_default_loggers(logger, debug_logger, "make_buffer");
@@ -124,15 +123,13 @@ void buffer::update_write_pointer(int nitems)
     gr::thread::scoped_lock guard(*mutex());
 
 #ifdef BUFFER_DEBUG
-    // BUFFER DEBUG
     unsigned orig_wr_idx = d_write_index;
 #endif
 
     d_write_index = index_add(d_write_index, nitems);
     d_abs_write_offset += nitems;
-
+    
 #ifdef BUFFER_DEBUG
-    // BUFFER DEBUG
     std::ostringstream msg;
     msg << "[" << this << "] update_write_pointer -- orig d_write_index: " << orig_wr_idx
         << " -- nitems: " << nitems << " -- d_write_index: " << d_write_index;

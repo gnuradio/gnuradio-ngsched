@@ -53,7 +53,6 @@ buffer_double_mapped::buffer_double_mapped(int nitems,
         throw std::bad_alloc();
 
 #ifdef BUFFER_DEBUG
-    // BUFFER DEBUG
     {
         std::ostringstream msg;
         msg << "[" << this << "] "
@@ -143,7 +142,6 @@ int buffer_double_mapped::space_available()
         }
 
 #ifdef BUFFER_DEBUG
-        // BUFFER DEBUG
         std::ostringstream msg;
         msg << "[" << this << "] "
             << "space_available() called  d_write_index: " << d_write_index

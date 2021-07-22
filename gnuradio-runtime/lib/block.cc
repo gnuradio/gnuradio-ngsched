@@ -475,7 +475,6 @@ buffer_sptr block::allocate_buffer(int port,
     buffer_sptr buf;
 
 #ifdef BUFFER_DEBUG
-    // BUFFER DEBUG
     GR_LOG_DEBUG(d_logger,
                  "Block: " + name() + " allocated buffer for output " + identifier());
 #endif
@@ -486,7 +485,6 @@ buffer_sptr block::allocate_buffer(int port,
 
     try {
 #ifdef BUFFER_DEBUG
-        // BUFFER DEBUG
         std::ostringstream msg;
         msg << "downstream_max_nitems: " << downstream_max_nitems
             << " -- downstream_lcm_nitems: " << downstream_lcm_nitems
