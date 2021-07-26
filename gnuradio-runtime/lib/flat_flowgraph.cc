@@ -247,7 +247,7 @@ void flat_flowgraph::connect_block_inputs(basic_block_sptr block)
                 throw std::runtime_error(msg.str());
             }
         }
-        
+
         // Set buffer's context
         src_buffer->set_context(context);
 

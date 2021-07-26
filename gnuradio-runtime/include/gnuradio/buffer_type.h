@@ -22,11 +22,13 @@
 
 namespace gr {
 
-
-typedef void (*factory_func_ptr)(int);
-
-GR_RUNTIME_API void foobar(int arg);
-
+// This is the function pointer declaration for the factory-like functions
+// used to create buffer subclasses
+typedef buffer_sptr (*factory_func_ptr)(int nitems,
+                                        size_t sizeof_item,
+                                        uint64_t downstrea_lcm_nitems,
+                                        block_sptr link,
+                                        block_sptr buf_owner);
 
 
 /*!

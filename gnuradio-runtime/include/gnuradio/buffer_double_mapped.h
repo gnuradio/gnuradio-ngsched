@@ -115,7 +115,6 @@ private:
      * \param downstream_lcm_nitems is the least common multiple of the items to
      *                              read by downstream blocks
      * \param link is the block that writes to this buffer.
-     * \param unused
      *
      * The total size of the buffer will be rounded up to a system
      * dependent boundary.  This is typically the system page size, but

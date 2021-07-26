@@ -134,7 +134,6 @@ target_link_libraries(gnuradio-runtime PUBLIC
   Boost::thread
   Log4Cpp::log4cpp
   MPLib::mplib
-  ${libunwind_LIBRARIES}
   # INTERFACE/PRIVATE split so users of the library can choose how to link to Python
   # (importantly, extension modules can avoid linking against Python and resolve
   #  their own Python symbols at runtime through the Python interpreter's linking)
@@ -151,8 +150,6 @@ target_link_libraries(gnuradio-runtime PUBLIC $<$<AND:$<CXX_COMPILER_ID:GNU>,$<V
 
 target_include_directories(gnuradio-runtime
   PUBLIC
-    ${PYTHON_NUMPY_INCLUDE_DIR}
-    ${pybind11_INCLUDE_DIR}
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../include>

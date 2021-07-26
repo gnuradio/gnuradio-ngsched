@@ -260,7 +260,7 @@ public:
     // -------------------------------------------------------------------------
 
     /*!
-     * \brief assign buffer context
+     * \brief Assign buffer context
      */
     void set_context(const buffer_context& context);
 

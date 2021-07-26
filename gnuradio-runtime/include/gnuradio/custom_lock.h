@@ -19,7 +19,9 @@ namespace gr {
 
 /*!
  * Custom lock interface. Objects should implement this interface in order to
- * use the custom_lock object below. The interface provides two
+ * use the custom_lock object below. The interface defines two functions that,
+ * as their names suggest, are called when the lock is locked and unlocked
+ * respectively.
  */
 class custom_lock_if
 {

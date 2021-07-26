@@ -26,7 +26,6 @@ install(FILES
   buffer_reader_sm.h
   buffer_single_mapped.h
   buffer_type.h
-  buffer_type_lookup_table.h
   constants.h
   custom_lock.h
   endianness.h

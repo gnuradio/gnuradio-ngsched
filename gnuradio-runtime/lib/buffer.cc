@@ -128,7 +128,7 @@ void buffer::update_write_pointer(int nitems)
 
     d_write_index = index_add(d_write_index, nitems);
     d_abs_write_offset += nitems;
-    
+
 #ifdef BUFFER_DEBUG
     std::ostringstream msg;
     msg << "[" << this << "] update_write_pointer -- orig d_write_index: " << orig_wr_idx
