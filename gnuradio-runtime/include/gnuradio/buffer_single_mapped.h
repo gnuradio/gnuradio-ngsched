@@ -22,10 +22,6 @@
 
 namespace gr {
 
-// TODO: move these to buffer.h where they are more accessible
-typedef void* (*memcpy_func_t)(void* dest, const void* src, std::size_t count);
-typedef void* (*memmove_func_t)(void* dest, const void* src, std::size_t count);
-
 /*!
  * \brief A single mapped buffer where wrapping conditions are handled explicitly
  * via input/output_blocked_callback functions called from block_executor.

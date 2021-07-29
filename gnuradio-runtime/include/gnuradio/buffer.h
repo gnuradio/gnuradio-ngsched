@@ -33,6 +33,9 @@ class buffer_reader_sm;
 
 enum class buffer_mapping_type { double_mapped, single_mapped };
 
+typedef void* (*memcpy_func_t)(void* dest, const void* src, std::size_t count);
+typedef void* (*memmove_func_t)(void* dest, const void* src, std::size_t count);
+
 /*!
  * \brief Allocate a buffer that holds at least \p nitems of size \p sizeof_item.
  *
