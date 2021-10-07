@@ -24,6 +24,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <functional>
 
 
 namespace gr {
@@ -35,6 +36,8 @@ class buffer_reader_sm;
 enum class buffer_mapping_type { double_mapped, single_mapped };
 
 typedef std::function<void*(void*, const void*, std::size_t)> mem_func_t;
+
+typedef std::function<void* (void*, const void*, std::size_t)> mem_func_t;
 
 /*!
  * \brief Allocate a buffer that holds at least \p nitems of size \p sizeof_item.
